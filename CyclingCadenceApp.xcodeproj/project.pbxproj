@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		E14D04482CC5986A00E22AFB /* CyclingCadenceApp WatchKit App Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = E14D04252CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		E14D04052CC5980300E22AFB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,17 +25,68 @@
 			remoteGlobalIDString = E14D03F32CC5980100E22AFB;
 			remoteInfo = CyclingCadenceApp;
 		};
+		E14D04352CC5986900E22AFB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E14D03EC2CC5980100E22AFB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E14D04242CC5986600E22AFB;
+			remoteInfo = "CyclingCadenceApp WatchKit App Watch App";
+		};
+		E14D043F2CC5986900E22AFB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E14D03EC2CC5980100E22AFB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E14D04242CC5986600E22AFB;
+			remoteInfo = "CyclingCadenceApp WatchKit App Watch App";
+		};
+		E14D04462CC5986A00E22AFB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E14D03EC2CC5980100E22AFB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E14D04242CC5986600E22AFB;
+			remoteInfo = "CyclingCadenceApp WatchKit App Watch App";
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E14D044C2CC5986A00E22AFB /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				E14D04482CC5986A00E22AFB /* CyclingCadenceApp WatchKit App Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		E14D03F42CC5980100E22AFB /* CyclingCadenceApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CyclingCadenceApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E14D04042CC5980300E22AFB /* CyclingCadenceAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CyclingCadenceAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E14D040E2CC5980300E22AFB /* CyclingCadenceAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CyclingCadenceAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E14D04252CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "CyclingCadenceApp WatchKit App Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E14D04342CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CyclingCadenceApp WatchKit App Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E14D043E2CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CyclingCadenceApp WatchKit App Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E1F1A84D2CC6E8A9000E493E /* Exceptions for "CyclingCadenceApp" folder in "CyclingCadenceApp" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E14D03F32CC5980100E22AFB /* CyclingCadenceApp */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E14D03F62CC5980100E22AFB /* CyclingCadenceApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E1F1A84D2CC6E8A9000E493E /* Exceptions for "CyclingCadenceApp" folder in "CyclingCadenceApp" target */,
+			);
 			path = CyclingCadenceApp;
 			sourceTree = "<group>";
 		};
@@ -43,6 +98,21 @@
 		E14D04112CC5980300E22AFB /* CyclingCadenceAppUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = CyclingCadenceAppUITests;
+			sourceTree = "<group>";
+		};
+		E14D04262CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "CyclingCadenceApp WatchKit App Watch App";
+			sourceTree = "<group>";
+		};
+		E14D04372CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "CyclingCadenceApp WatchKit App Watch AppTests";
+			sourceTree = "<group>";
+		};
+		E14D04412CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "CyclingCadenceApp WatchKit App Watch AppUITests";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -69,6 +139,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E14D04222CC5986600E22AFB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E14D04312CC5986900E22AFB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E14D043B2CC5986900E22AFB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -78,6 +169,9 @@
 				E14D03F62CC5980100E22AFB /* CyclingCadenceApp */,
 				E14D04072CC5980300E22AFB /* CyclingCadenceAppTests */,
 				E14D04112CC5980300E22AFB /* CyclingCadenceAppUITests */,
+				E14D04262CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App */,
+				E14D04372CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppTests */,
+				E14D04412CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppUITests */,
 				E14D03F52CC5980100E22AFB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -88,6 +182,9 @@
 				E14D03F42CC5980100E22AFB /* CyclingCadenceApp.app */,
 				E14D04042CC5980300E22AFB /* CyclingCadenceAppTests.xctest */,
 				E14D040E2CC5980300E22AFB /* CyclingCadenceAppUITests.xctest */,
+				E14D04252CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App.app */,
+				E14D04342CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppTests.xctest */,
+				E14D043E2CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -102,10 +199,12 @@
 				E14D03F02CC5980100E22AFB /* Sources */,
 				E14D03F12CC5980100E22AFB /* Frameworks */,
 				E14D03F22CC5980100E22AFB /* Resources */,
+				E14D044C2CC5986A00E22AFB /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E14D04472CC5986A00E22AFB /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				E14D03F62CC5980100E22AFB /* CyclingCadenceApp */,
@@ -163,6 +262,74 @@
 			productReference = E14D040E2CC5980300E22AFB /* CyclingCadenceAppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		E14D04242CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E14D04492CC5986A00E22AFB /* Build configuration list for PBXNativeTarget "CyclingCadenceApp WatchKit App Watch App" */;
+			buildPhases = (
+				E14D04212CC5986600E22AFB /* Sources */,
+				E14D04222CC5986600E22AFB /* Frameworks */,
+				E14D04232CC5986600E22AFB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E14D04262CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App */,
+			);
+			name = "CyclingCadenceApp WatchKit App Watch App";
+			packageProductDependencies = (
+			);
+			productName = "CyclingCadenceApp WatchKit App Watch App";
+			productReference = E14D04252CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E14D04332CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E14D044D2CC5986A00E22AFB /* Build configuration list for PBXNativeTarget "CyclingCadenceApp WatchKit App Watch AppTests" */;
+			buildPhases = (
+				E14D04302CC5986900E22AFB /* Sources */,
+				E14D04312CC5986900E22AFB /* Frameworks */,
+				E14D04322CC5986900E22AFB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E14D04362CC5986900E22AFB /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E14D04372CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppTests */,
+			);
+			name = "CyclingCadenceApp WatchKit App Watch AppTests";
+			packageProductDependencies = (
+			);
+			productName = "CyclingCadenceApp WatchKit App Watch AppTests";
+			productReference = E14D04342CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		E14D043D2CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E14D04502CC5986A00E22AFB /* Build configuration list for PBXNativeTarget "CyclingCadenceApp WatchKit App Watch AppUITests" */;
+			buildPhases = (
+				E14D043A2CC5986900E22AFB /* Sources */,
+				E14D043B2CC5986900E22AFB /* Frameworks */,
+				E14D043C2CC5986900E22AFB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E14D04402CC5986900E22AFB /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E14D04412CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppUITests */,
+			);
+			name = "CyclingCadenceApp WatchKit App Watch AppUITests";
+			packageProductDependencies = (
+			);
+			productName = "CyclingCadenceApp WatchKit App Watch AppUITests";
+			productReference = E14D043E2CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -184,6 +351,17 @@
 						CreatedOnToolsVersion = 16.0;
 						TestTargetID = E14D03F32CC5980100E22AFB;
 					};
+					E14D04242CC5986600E22AFB = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					E14D04332CC5986900E22AFB = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = E14D04242CC5986600E22AFB;
+					};
+					E14D043D2CC5986900E22AFB = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = E14D04242CC5986600E22AFB;
+					};
 				};
 			};
 			buildConfigurationList = E14D03EF2CC5980100E22AFB /* Build configuration list for PBXProject "CyclingCadenceApp" */;
@@ -203,6 +381,9 @@
 				E14D03F32CC5980100E22AFB /* CyclingCadenceApp */,
 				E14D04032CC5980300E22AFB /* CyclingCadenceAppTests */,
 				E14D040D2CC5980300E22AFB /* CyclingCadenceAppUITests */,
+				E14D04242CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App */,
+				E14D04332CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppTests */,
+				E14D043D2CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -223,6 +404,27 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E14D040C2CC5980300E22AFB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E14D04232CC5986600E22AFB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E14D04322CC5986900E22AFB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E14D043C2CC5986900E22AFB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -253,6 +455,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E14D04212CC5986600E22AFB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E14D04302CC5986900E22AFB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E14D043A2CC5986900E22AFB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -265,6 +488,21 @@
 			isa = PBXTargetDependency;
 			target = E14D03F32CC5980100E22AFB /* CyclingCadenceApp */;
 			targetProxy = E14D040F2CC5980300E22AFB /* PBXContainerItemProxy */;
+		};
+		E14D04362CC5986900E22AFB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E14D04242CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App */;
+			targetProxy = E14D04352CC5986900E22AFB /* PBXContainerItemProxy */;
+		};
+		E14D04402CC5986900E22AFB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E14D04242CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App */;
+			targetProxy = E14D043F2CC5986900E22AFB /* PBXContainerItemProxy */;
+		};
+		E14D04472CC5986A00E22AFB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E14D04242CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App */;
+			targetProxy = E14D04462CC5986A00E22AFB /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -399,6 +637,8 @@
 				DEVELOPMENT_TEAM = 74B93L37DH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CyclingCadenceApp/Info.plist;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app requires location access to track your cycling activity and provide speed information.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -428,6 +668,8 @@
 				DEVELOPMENT_TEAM = 74B93L37DH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CyclingCadenceApp/Info.plist;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app requires location access to track your cycling activity and provide speed information.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -518,6 +760,154 @@
 			};
 			name = Release;
 		};
+		E14D044A2CC5986A00E22AFB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "CyclingCadenceApp WatchKit App Watch App/CyclingCadenceApp WatchKit App Watch App.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"CyclingCadenceApp WatchKit App Watch App/Preview Content\"";
+				DEVELOPMENT_TEAM = 74B93L37DH;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "CyclingCadenceApp-WatchKit-App-Watch-App-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "CyclingCadenceApp WatchKit App";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "\"This app requires access to your workout data to track and display your cycling sessions.\"";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "\"This app requires access to your workout data to track and display your cycling sessions.\"";
+				INFOPLIST_KEY_NSMotionUsageDescription = "\"This app requires access to the gyroscope and accelerometer to track cycling activity.\"";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.LiamIoT.CyclingCadenceApp;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoT.CyclingCadenceApp.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Debug;
+		};
+		E14D044B2CC5986A00E22AFB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "CyclingCadenceApp WatchKit App Watch App/CyclingCadenceApp WatchKit App Watch App.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"CyclingCadenceApp WatchKit App Watch App/Preview Content\"";
+				DEVELOPMENT_TEAM = 74B93L37DH;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "CyclingCadenceApp-WatchKit-App-Watch-App-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "CyclingCadenceApp WatchKit App";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "\"This app requires access to your workout data to track and display your cycling sessions.\"";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "\"This app requires access to your workout data to track and display your cycling sessions.\"";
+				INFOPLIST_KEY_NSMotionUsageDescription = "\"This app requires access to the gyroscope and accelerometer to track cycling activity.\"";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.LiamIoT.CyclingCadenceApp;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoT.CyclingCadenceApp.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Release;
+		};
+		E14D044E2CC5986A00E22AFB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74B93L37DH;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.LiamIoT.CyclingCadenceApp-WatchKit-App-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CyclingCadenceApp WatchKit App Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CyclingCadenceApp WatchKit App Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Debug;
+		};
+		E14D044F2CC5986A00E22AFB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74B93L37DH;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.LiamIoT.CyclingCadenceApp-WatchKit-App-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CyclingCadenceApp WatchKit App Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CyclingCadenceApp WatchKit App Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Release;
+		};
+		E14D04512CC5986A00E22AFB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74B93L37DH;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.LiamIoT.CyclingCadenceApp-WatchKit-App-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "CyclingCadenceApp WatchKit App Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Debug;
+		};
+		E14D04522CC5986A00E22AFB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74B93L37DH;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.LiamIoT.CyclingCadenceApp-WatchKit-App-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "CyclingCadenceApp WatchKit App Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -553,6 +943,33 @@
 			buildConfigurations = (
 				E14D041F2CC5980300E22AFB /* Debug */,
 				E14D04202CC5980300E22AFB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E14D04492CC5986A00E22AFB /* Build configuration list for PBXNativeTarget "CyclingCadenceApp WatchKit App Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E14D044A2CC5986A00E22AFB /* Debug */,
+				E14D044B2CC5986A00E22AFB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E14D044D2CC5986A00E22AFB /* Build configuration list for PBXNativeTarget "CyclingCadenceApp WatchKit App Watch AppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E14D044E2CC5986A00E22AFB /* Debug */,
+				E14D044F2CC5986A00E22AFB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E14D04502CC5986A00E22AFB /* Build configuration list for PBXNativeTarget "CyclingCadenceApp WatchKit App Watch AppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E14D04512CC5986A00E22AFB /* Debug */,
+				E14D04522CC5986A00E22AFB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
