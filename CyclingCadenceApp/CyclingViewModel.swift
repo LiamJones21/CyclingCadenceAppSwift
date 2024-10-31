@@ -3,10 +3,7 @@
 //  CyclingCadenceApp
 //
 //  Created by Jones, Liam on 20/10/2024.
-//  CyclingViewModel.swift
-//  CyclingCadenceApp
-//
-//  Created by Jones, Liam on 20/10/2024.
+
 import Foundation
 import CoreMotion
 import CoreLocation
