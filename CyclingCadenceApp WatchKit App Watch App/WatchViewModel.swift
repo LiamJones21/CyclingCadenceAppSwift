@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreMotion
+import CoreML
 import WatchConnectivity
 import Combine
 import CoreLocation
@@ -58,6 +59,31 @@ class WatchViewModel: NSObject, ObservableObject, WCSessionDelegate, CLLocationM
     // Timer for periodic data sending
     private var dataSendTimer: Timer?
     
+    // Computed property for session duration
+    var sessionDuration: String {
+        let elapsed: TimeInterval
+        if isPredicting, let startTime = predictionStartTime {
+            elapsed = Date().timeIntervalSince(startTime)
+        } else if isRecording, let startTime = recordingStartTime {
+            elapsed = Date().timeIntervalSince(startTime)
+        } else {
+            return "00:00"
+        }
+        let minutes = Int(elapsed) / 60
+        let seconds = Int(elapsed) % 60
+        return String(format: "%02d:%02d", minutes, seconds)
+    }
+
+    private var recordingStartTime: Date?
+    private var predictionStartTime: Date?
+    
+    // MARK: - Prediction Mode Properties
+        @Published var isPredicting: Bool = false
+        @Published var selectedModel: ModelConfig?
+        var models: [ModelConfig] = []
+        var predictionTimer: Timer?
+        var predictionWindowData: [CMAccelerometerData] = []
+    
     // MARK: - Initialization
     override init() {
         super.init()
@@ -90,9 +116,100 @@ class WatchViewModel: NSObject, ObservableObject, WCSessionDelegate, CLLocationM
         }
     }
     
+    
+
+        // MARK: - Prediction Control
+        func startPrediction() {
+            guard let model = selectedModel else { return }
+            predictionStartTime = Date()
+            isPredicting = true
+            predictionWindowData.removeAll()
+            startSensorUpdatesForPrediction()
+        }
+
+        func stopPrediction() {
+            predictionStartTime = nil
+            isPredicting = false
+            stopSensorUpdatesForPrediction()
+            selectedModel = nil
+        }
+
+        // MARK: - Sensor Updates for Prediction
+        func startSensorUpdatesForPrediction() {
+            motionManager.accelerometerUpdateInterval = 1.0 / 50.0 // 50 Hz
+            motionManager.startAccelerometerUpdates()
+
+            predictionTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 50.0, repeats: true) { [weak self] _ in
+                if let accelData = self?.motionManager.accelerometerData {
+                    self?.handlePredictionSensorData(accelData: accelData)
+                }
+            }
+        }
+
+        func stopSensorUpdatesForPrediction() {
+            motionManager.stopAccelerometerUpdates()
+            predictionTimer?.invalidate()
+            predictionTimer = nil
+        }
+
+        func handlePredictionSensorData(accelData: CMAccelerometerData) {
+            guard let model = selectedModel else { return }
+
+            predictionWindowData.append(accelData)
+
+            // Check if we have enough data for a window
+            if predictionWindowData.count >= model.config.windowSize {
+                // Perform prediction
+                let predictionResult = performPrediction(with: predictionWindowData, model: model)
+                // Send prediction result to phone
+                sendPredictionResultToPhone(predictionResult)
+                // Remove data based on window step (overlap)
+                predictionWindowData.removeFirst(model.config.windowStep)
+            }
+        }
+
+        func performPrediction(with data: [CMAccelerometerData], model: ModelConfig) -> PredictionResult {
+            // Placeholder implementation
+            // Perform preprocessing and prediction using the model and config
+            // For now, we will simulate prediction results
+
+            let randomCadence = Double.random(in: 60...120)
+            let randomGear = Int.random(in: 1...5)
+            let randomTerrain = ["Road", "Gravel"].randomElement()!
+            let randomPosition = Bool.random()
+
+            return PredictionResult(
+                timestamp: Date(),
+                cadence: randomCadence,
+                gear: randomGear,
+                terrain: randomTerrain,
+                isStanding: randomPosition,
+                speed: currentSpeed
+            )
+        }
+
+        func sendPredictionResultToPhone(_ result: PredictionResult) {
+            if sessionWC.isReachable {
+                do {
+                    let encoder = JSONEncoder()
+                    let data = try encoder.encode(result)
+                    let dataDict: [String: Any] = ["predictionResult": data]
+                    sessionWC.sendMessage(dataDict, replyHandler: nil, errorHandler: { error in
+                        print("Error sending prediction result to phone: \(error.localizedDescription)")
+                    })
+                    print("Sent prediction result to phone")
+                } catch {
+                    print("Error encoding prediction result: \(error.localizedDescription)")
+                }
+            } else {
+                print("Phone is not reachable")
+            }
+        }
+    
     // MARK: - Workout Session Management
     func startRecording(synchronized: Bool = true) {
         guard workoutSession == nil else { return }
+        recordingStartTime = Date()
         
         let workoutConfiguration = HKWorkoutConfiguration()
         workoutConfiguration.activityType = .cycling
@@ -128,6 +245,7 @@ class WatchViewModel: NSObject, ObservableObject, WCSessionDelegate, CLLocationM
     
     func stopRecording(synchronized: Bool = true) {
         guard let workoutSession = workoutSession, let workoutBuilder = workoutBuilder else { return }
+        recordingStartTime = nil
         workoutSession.end()
         workoutBuilder.endCollection(withEnd: Date()) { (success, error) in
             // Handle errors if needed
@@ -292,9 +410,15 @@ class WatchViewModel: NSObject, ObservableObject, WCSessionDelegate, CLLocationM
     }
     
     // MARK: - Data Synchronization
+    private var isSendingData = false
+
     func sendCollectedDataToPhone() {
+        guard !isSendingData else { return }
+        isSendingData = true
+
         guard !unsentData.isEmpty else {
             print("No data to send to phone.")
+            isSendingData = false
             return
         }
         
@@ -308,11 +432,14 @@ class WatchViewModel: NSObject, ObservableObject, WCSessionDelegate, CLLocationM
                 print("Transferred unsent data to phone. Data count: \(unsentData.count)")
                 
                 unsentData.removeAll()
+                isSendingData = false
             } catch {
                 print("Error encoding cycling data: \(error.localizedDescription)")
+                isSendingData = false
             }
         } else {
             print("Phone is not reachable. Data will be sent when the connection is available.")
+            isSendingData = false
         }
     }
     
@@ -466,7 +593,95 @@ class WatchViewModel: NSObject, ObservableObject, WCSessionDelegate, CLLocationM
                     print("Settings updated from phone")
                 }
             }
+            // Handle model loading
+            if let data = message["models"] as? Data {
+                do {
+                    let decoder = JSONDecoder()
+                    self.models = try decoder.decode([ModelConfig].self, from: data)
+                    print("Models loaded on watch")
+                } catch {
+                    print("Error decoding models: \(error.localizedDescription)")
+                }
+            }
+
+            // Handle start prediction
+            if let data = message["startPrediction"] as? Data {
+                do {
+                    let decoder = JSONDecoder()
+                    self.selectedModel = try decoder.decode(ModelConfig.self, from: data)
+                    self.startPrediction()
+                    print("Started prediction with model: \(self.selectedModel?.name ?? "")")
+                } catch {
+                    print("Error decoding model for prediction: \(error.localizedDescription)")
+                }
+            }
+
+            // Handle stop prediction
+            if message["stopPrediction"] as? Bool == true {
+                self.stopPrediction()
+                print("Stopped prediction")
+            }
         }
+        
+        
+        func performPrediction(with data: [CMAccelerometerData], model: ModelConfig) -> PredictionResult {
+                // Preprocess data
+                let features = Preprocessing.computeFeatures(from: data, config: model.config)
+
+                // Convert features to MLMultiArray
+                guard let inputArray = try? MLMultiArray(shape: [NSNumber(value: features.count)], dataType: .double) else {
+                    fatalError("Could not create MLMultiArray")
+                }
+
+                for (index, value) in features.enumerated() {
+                    inputArray[index] = NSNumber(value: value)
+                }
+
+                // Load the Core ML model
+                guard let mlModel = loadModel(named: model.name) else {
+                    fatalError("Could not load model \(model.name)")
+                }
+
+                // Create a prediction input
+                let input = ModelInput(features: inputArray)
+
+                // Perform prediction
+                guard let predictionOutput = try? mlModel.prediction(from: input) else {
+                    fatalError("Prediction failed")
+                }
+
+                // Extract prediction results
+                let predictedCadence = predictionOutput.featureValue(for: "cadence")?.doubleValue ?? 0.0
+                let predictedGear = Int(predictionOutput.featureValue(for: "gear")?.int64Value ?? 0)
+                let predictedTerrain = predictionOutput.featureValue(for: "terrain")?.stringValue ?? "Unknown"
+                let predictedPosition = (predictionOutput.featureValue(for: "isStanding")?.int64Value ?? 0) == 1
+
+                return PredictionResult(
+                    timestamp: Date(),
+                    cadence: predictedCadence,
+                    gear: predictedGear,
+                    terrain: predictedTerrain,
+                    isStanding: predictedPosition,
+                    speed: currentSpeed
+                )
+            }
+
+            func loadModel(named modelName: String) -> MLModel? {
+                // Assuming models are included in the app bundle
+                guard let modelURL = Bundle.main.url(forResource: modelName, withExtension: "mlmodelc") else {
+                    print("Model \(modelName) not found")
+                    return nil
+                }
+
+                do {
+                    let compiledModel = try MLModel(contentsOf: modelURL)
+                    return compiledModel
+                } catch {
+                    print("Error loading model \(modelName): \(error.localizedDescription)")
+                    return nil
+                }
+            }
+        
     }
     
     // Handle receiving data from the phone via transferUserInfo (if needed)
@@ -495,5 +710,23 @@ class WatchViewModel: NSObject, ObservableObject, WCSessionDelegate, CLLocationM
     
     func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder, didCollectDataOf collectedTypes: Set<HKSampleType>) {
         // Handle collected data if needed
+    }
+}
+class ModelInput: MLFeatureProvider {
+    var features: MLMultiArray
+
+    var featureNames: Set<String> {
+        return ["input"]
+    }
+
+    func featureValue(for featureName: String) -> MLFeatureValue? {
+        if featureName == "input" {
+            return MLFeatureValue(multiArray: features)
+        }
+        return nil
+    }
+
+    init(features: MLMultiArray) {
+        self.features = features
     }
 }

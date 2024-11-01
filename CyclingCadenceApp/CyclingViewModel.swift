@@ -10,6 +10,7 @@ import CoreLocation
 import WatchConnectivity
 import Combine
 import SwiftUI
+import CreateML
 
 // MARK: - Activity Log Entry
 struct ActivityLogEntry: Identifiable, Codable {
@@ -42,6 +43,18 @@ struct PhoneData: Codable {
     let isStanding: Bool
 }
 
+// MARK: - Prediction Result Model
+
+struct PredictionResult: Codable, Identifiable {
+    var id = UUID()
+    var timestamp: Date
+    var cadence: Double
+    var gear: Int
+    var terrain: String
+    var isStanding: Bool
+    var speed: Double
+}
+
 class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, WCSessionDelegate {
     // MARK: - Published Properties
     @Published var currentSpeed: Double = 0.0 // Speed in m/s
@@ -70,6 +83,7 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
     @Published var isWatchConnected: Bool = false
     @Published var activityLog: [ActivityLogEntry] = [] // Activity log
     @Published var recordingStateLastChanged: Date = Date()
+    
 
     // MARK: - Properties
     private var motionManager = CMMotionManager()
@@ -106,6 +120,12 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
     // Data Batch Tracking
     private var dataBatchSaveCount: Int = 0
     private var totalDataPointsSaved: Int = 0
+    
+    // MARK: - Prediction Mode Properties
+    @Published var isPredicting: Bool = false
+    @Published var predictionResult: PredictionResult?
+    @Published var models: [ModelConfig] = []
+    @Published var selectedModelIndex: Int?
 
     // MARK: - Setup Methods
     func setup() {
@@ -114,6 +134,7 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
         setupWatchConnectivity()
         loadSessionsFromFile()
         loadSettings()
+        loadModels()
         loadActivityLogFromFile()
         NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: UIApplication.willResignActiveNotification, object: nil)
     }
@@ -142,7 +163,309 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
             }
         }
     }
+    // MARK: - Model Loading
+        func loadModels() {
+            // Load models from local storage or server
+            // For simplicity, we will create dummy models
+            models = [
+                ModelConfig(name: "Model A", config: ModelConfig.Config(windowSize: 100, windowStep: 50, includeFFT: true, includeWavelet: false)),
+                ModelConfig(name: "Model B", config: ModelConfig.Config(windowSize: 200, windowStep: 100, includeFFT: false, includeWavelet: true)),
+                // Add more models as needed
+            ]
+        }
+    
+    // MARK: - Model Training
+//    func trainModel(windowSize: Int, windowStep: Int, includeFFT: Bool, includeWavelet: Bool, modelType: String, maxTrainingTime: TimeInterval, completion: @escaping (Double?) -> Void) {
+//        DispatchQueue.global(qos: .userInitiated).async {
+//            // Load collected data
+//            guard let data = self.loadTrainingData() else {
+//                DispatchQueue.main.async {
+//                    completion(nil)
+//                }
+//                return
+//            }
+//
+//            // Preprocess data
+//            let features = self.preprocessData(data: data, windowSize: windowSize, windowStep: windowStep, includeFFT: includeFFT, includeWavelet: includeWavelet)
+//
+//            // Create MLDataTable
+//            guard let dataTable = try? MLDataTable(dictionary: features) else {
+//                DispatchQueue.main.async {
+//                    completion(nil)
+//                }
+//                return
+//            }
+//
+//            // Split data
+//            let (trainingData, testingData) = dataTable.randomSplit(by: 0.8, seed: 42)
+//
+//            // Set up training configuration
+//            let configuration = MLModelConfiguration()
+//            configuration.computeUnits = .cpuOnly
+//
+//            let startTime = Date()
+//            var model: MLRegressor?
+//
+//            // Train model based on type
+//            switch modelType {
+//            case "Decision Tree":
+//                let parameters = MLDecisionTreeRegressor.ModelParameters()
+//                // Configure parameters if needed
+//                model = try? MLDecisionTreeRegressor(trainingData: trainingData, targetColumn: "cadence", parameters: parameters, configuration: configuration)
+//            case "Random Forest":
+//                let parameters = MLRandomForestRegressor.ModelParameters()
+//                // Configure parameters if needed
+//                model = try? MLRandomForestRegressor(trainingData: trainingData, targetColumn: "cadence", parameters: parameters, configuration: configuration)
+//            case "Linear Regression":
+//                model = try? MLLinearRegressor(trainingData: trainingData, targetColumn: "cadence", configuration: configuration)
+//            default:
+//                print("Unsupported model type: \(modelType)")
+//            }
+//
+//            // Check training duration
+//            let trainingDuration = Date().timeIntervalSince(startTime)
+//            if trainingDuration > maxTrainingTime {
+//                DispatchQueue.main.async {
+//                    print("Training exceeded maximum duration.")
+//                    completion(nil)
+//                }
+//                return
+//            }
+//
+//            // Evaluate model
+//            if let model = model {
+//                let evaluationMetrics = model.evaluation(on: testingData)
+//                let error = evaluationMetrics.metrics[.rootMeanSquaredError] as? Double ?? 0.0
+//
+//                print("Training Error (RMSE): \(error)")
+//
+//                // Save model
+//                let modelName = "CustomModel_\(Date().timeIntervalSince1970)"
+//                let saveURL = self.getDocumentsDirectory().appendingPathComponent("\(modelName).mlmodel")
+//                do {
+//                    try model.write(to: saveURL)
+//                } catch {
+//                    print("Error saving model: \(error.localizedDescription)")
+//                    DispatchQueue.main.async {
+//                        completion(nil)
+//                    }
+//                    return
+//                }
+//
+//                // Save model config as JSON
+//                let configURL = self.getDocumentsDirectory().appendingPathComponent("\(modelName).json")
+//                do {
+//                    let encoder = JSONEncoder()
+//                    let configData = try encoder.encode(ModelConfig.Config(windowSize: windowSize, windowStep: windowStep, includeFFT: includeFFT, includeWavelet: includeWavelet))
+//                    try configData.write(to: configURL)
+//                } catch {
+//                    print("Error saving model config: \(error.localizedDescription)")
+//                }
+//
+//                // Update models list
+//                let config = ModelConfig.Config(windowSize: windowSize, windowStep: windowStep, includeFFT: includeFFT, includeWavelet: includeWavelet)
+//                let newModel = ModelConfig(name: modelName, config: config)
+//                DispatchQueue.main.async {
+//                    self.models.append(newModel)
+//                    completion(error)
+//                }
+//            } else {
+//                DispatchQueue.main.async {
+//                    print("Model training is not available on this device.")
+//                    completion(nil)
+//                }
+//            }
+//        }
+//    }
 
+
+        func loadTrainingData() -> [CyclingData]? {
+            // Load your collected cycling data
+            // Return an array of CyclingData
+            // Implement this function based on your data storage
+            return sessions.flatMap { $0.data }
+        }
+
+        func preprocessData(data: [CyclingData], windowSize: Int, windowStep: Int, includeFFT: Bool, includeWavelet: Bool) -> [String: [MLDataValueConvertible]] {
+            var features: [String: [MLDataValueConvertible]] = [:]
+
+            // Initialize feature arrays
+            var meanAccelX: [Double] = []
+            var meanAccelY: [Double] = []
+            var meanAccelZ: [Double] = []
+            var speed: [Double] = []
+            var cadence: [Double] = []
+            var terrain: [String] = []
+            var isStanding: [Bool] = []
+
+            // Process data into windows
+            for start in stride(from: 0, to: data.count - windowSize, by: windowStep) {
+                let end = start + windowSize
+                let window = Array(data[start..<end])
+
+                // Extract features
+                let featureValues = extractFeatures(window: window, includeFFT: includeFFT, includeWavelet: includeWavelet)
+
+                meanAccelX.append(featureValues.meanAccelX)
+                meanAccelY.append(featureValues.meanAccelY)
+                meanAccelZ.append(featureValues.meanAccelZ)
+                speed.append(featureValues.meanSpeed)
+                cadence.append(featureValues.meanCadence)
+                terrain.append(featureValues.modeTerrain)
+                isStanding.append(featureValues.modeIsStanding)
+            }
+
+            // Assign feature arrays to the dictionary
+            features["meanAccelX"] = meanAccelX
+            features["meanAccelY"] = meanAccelY
+            features["meanAccelZ"] = meanAccelZ
+            features["speed"] = speed
+            features["cadence"] = cadence
+            features["terrain"] = terrain
+            features["isStanding"] = isStanding
+
+            return features
+        }
+        
+        func extractFeatures(window: [CyclingData], includeFFT: Bool, includeWavelet: Bool) -> (meanAccelX: Double, meanAccelY: Double, meanAccelZ: Double, meanSpeed: Double, meanCadence: Double, modeTerrain: String, modeIsStanding: Bool) {
+            let accelX = window.map { $0.accelerometerData.x }
+            let accelY = window.map { $0.accelerometerData.y }
+            let accelZ = window.map { $0.accelerometerData.z }
+
+            let meanAccelX = accelX.reduce(0, +) / Double(accelX.count)
+            let meanAccelY = accelY.reduce(0, +) / Double(accelY.count)
+            let meanAccelZ = accelZ.reduce(0, +) / Double(accelZ.count)
+            let meanSpeed = window.map { $0.speed }.reduce(0, +) / Double(window.count)
+            let meanCadence = window.map { $0.cadence }.reduce(0, +) / Double(window.count)
+
+            let terrainCounts = Dictionary(grouping: window.map { $0.terrain }, by: { $0 }).mapValues { $0.count }
+            let modeTerrain = terrainCounts.max(by: { $0.value < $1.value })?.key ?? "Unknown"
+
+            let isStandingCounts = Dictionary(grouping: window.map { $0.isStanding }, by: { $0 }).mapValues { $0.count }
+            let modeIsStanding = isStandingCounts.max(by: { $0.value < $1.value })?.key ?? false
+
+            // Additional features can be calculated here, including FFT and Wavelet transforms, if implemented.
+
+            return (meanAccelX, meanAccelY, meanAccelZ, meanSpeed, meanCadence, modeTerrain, modeIsStanding)
+        }
+        func preprocessData(data: [CyclingData], windowSize: Int, windowStep: Int, includeFFT: Bool, includeWavelet: Bool) -> [String: [Any]] {
+            // Implement preprocessing steps similar to those in Preprocessing.swift
+            // Return a dictionary where keys are column names and values are arrays of column data
+            var features: [String: [Any]] = [:]
+            // Implement your preprocessing logic here
+            return features
+        }
+
+        func getDocumentsDirectory() -> URL {
+            FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        }
+    // MARK: - Model Management
+        func addModel(from url: URL) {
+            // Get model name
+            let modelName = url.deletingPathExtension().lastPathComponent
+
+            // Read the associated config file (assuming it's a JSON file with the same name)
+            let configURL = url.deletingPathExtension().appendingPathExtension("json")
+            do {
+                let configData = try Data(contentsOf: configURL)
+                let decoder = JSONDecoder()
+                let config = try decoder.decode(ModelConfig.Config.self, from: configData)
+                let newModel = ModelConfig(name: modelName, config: config)
+                models.append(newModel)
+                // Save models if needed
+            } catch {
+                print("Error loading model config: \(error.localizedDescription)")
+            }
+        }
+
+        func removeModel(at index: Int) {
+            models.remove(at: index)
+            // Save models if needed
+        }
+
+        func deleteModels(at offsets: IndexSet) {
+            models.remove(atOffsets: offsets)
+            // Save models if needed
+        }
+    // MARK: - Prediction Control
+        func startPrediction(selectedModelIndex: Int?) {
+            guard let index = selectedModelIndex else { return }
+            let model = models[index]
+            isPredicting = true
+            sendStartPredictionToWatch(model: model)
+        }
+
+        func stopPrediction() {
+            isPredicting = false
+            sendStopPredictionToWatch()
+        }
+
+        // MARK: - Watch Communication for Prediction
+        func sendModelsToWatch() {
+            if sessionWC.isReachable {
+                do {
+                    let encoder = JSONEncoder()
+                    let data = try encoder.encode(models)
+                    let dataDict: [String: Any] = ["models": data]
+                    sessionWC.sendMessage(dataDict, replyHandler: nil, errorHandler: { error in
+                        print("Error sending models to watch: \(error.localizedDescription)")
+                    })
+                    print("Sent models to watch")
+                } catch {
+                    print("Error encoding models: \(error.localizedDescription)")
+                }
+            } else {
+                print("Watch is not reachable")
+            }
+        }
+
+        func sendStartPredictionToWatch(model: ModelConfig) {
+            if sessionWC.isReachable {
+                do {
+                    let encoder = JSONEncoder()
+                    let data = try encoder.encode(model)
+                    let dataDict: [String: Any] = ["startPrediction": data]
+                    sessionWC.sendMessage(dataDict, replyHandler: nil, errorHandler: { error in
+                        print("Error sending start prediction to watch: \(error.localizedDescription)")
+                    })
+                    print("Sent start prediction command to watch")
+                } catch {
+                    print("Error encoding model: \(error.localizedDescription)")
+                }
+            } else {
+                print("Watch is not reachable")
+            }
+        }
+
+        func sendStopPredictionToWatch() {
+            if sessionWC.isReachable {
+                let dataDict: [String: Any] = ["stopPrediction": true]
+                sessionWC.sendMessage(dataDict, replyHandler: nil, errorHandler: { error in
+                    print("Error sending stop prediction to watch: \(error.localizedDescription)")
+                })
+                print("Sent stop prediction command to watch")
+            } else {
+                print("Watch is not reachable")
+            }
+        }
+
+      
+    // MARK: - Save Settings Methods
+        func saveWheelDiameter(_ diameter: Double) {
+            let defaults = UserDefaults.standard
+            defaults.setValue(diameter, forKey: "wheelDiameter")
+            
+            // Update wheelCircumference based on diameter
+            let circumference = Double.pi * diameter
+            defaults.setValue(circumference, forKey: "wheelCircumference")
+        }
+
+        func saveGearRatios() {
+            let defaults = UserDefaults.standard
+            defaults.setValue(gearRatios, forKey: "gearRatios")
+        }
+    
+    
     // MARK: - GPS Speed Calculation
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if let speed = locations.last?.speed, locations.last?.horizontalAccuracy ?? 100 > 0 {
@@ -539,6 +862,16 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
 
                 if settingsUpdated {
                     print("Settings updated from watch")
+                }
+            }
+            if let data = message["predictionResult"] as? Data {
+                do {
+                    let decoder = JSONDecoder()
+                    let prediction = try decoder.decode(PredictionResult.self, from: data)
+                    self.predictionResult = prediction
+                    print("Received prediction result from watch")
+                } catch {
+                    print("Error decoding prediction result: \(error.localizedDescription)")
                 }
             }
         }

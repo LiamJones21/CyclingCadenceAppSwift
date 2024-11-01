@@ -29,3 +29,14 @@ struct CyclingData: Codable {
     var accelerometerData: SensorData
     var location: LocationData?
 }
+
+// Prediction Result Model
+struct PredictionResult: Codable, Identifiable {
+    var id = UUID()
+    var timestamp: Date
+    var cadence: Double
+    var gear: Int
+    var terrain: String
+    var isStanding: Bool
+    var speed: Double
+}

@@ -29,3 +29,4 @@ struct CyclingData: Codable {
     var accelerometerData: SensorData
     var location: LocationData?
 }
+

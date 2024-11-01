@@ -36,6 +36,11 @@ struct ContentView: View {
                     .onAppear {
                         viewModel.setup()
                     }
+                    PredictionView(viewModel: viewModel)
+                                            .tabItem {
+                                                Image(systemName: "waveform.path.ecg")
+                                                Text("Prediction")
+                                            }
                     // Settings Tab
                     SettingsView(viewModel: viewModel)
                         .tabItem {

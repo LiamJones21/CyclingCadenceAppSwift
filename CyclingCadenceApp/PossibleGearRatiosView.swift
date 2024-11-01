@@ -11,6 +11,7 @@
 import SwiftUI
 struct PossibleGearRatiosView: View {
     @State private var selectedRatio: String = ""
+    @State private var customRatio: String = ""
     let possibleGearRatios: [String]
     var onSelect: (String) -> Void
 
@@ -21,13 +22,21 @@ struct PossibleGearRatiosView: View {
                     ForEach(possibleGearRatios, id: \.self) { ratio in
                         Text(ratio).tag(ratio)
                     }
+                    Text("Custom").tag("Custom")
                 }
                 .pickerStyle(WheelPickerStyle())
                 .labelsHidden()
                 .frame(maxHeight: 200)
 
+                if selectedRatio == "Custom" {
+                    TextField("Enter Gear Ratio (e.g., 38/34 or 38.0/16.3)", text: $customRatio)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding()
+                }
+
                 Button(action: {
-                    onSelect(selectedRatio)
+                    let ratioToAdd = selectedRatio == "Custom" ? customRatio : selectedRatio
+                    onSelect(ratioToAdd)
                 }) {
                     Text("Add")
                         .frame(maxWidth: .infinity, minHeight: 44)

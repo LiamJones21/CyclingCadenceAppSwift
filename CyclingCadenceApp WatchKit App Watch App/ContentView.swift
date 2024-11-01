@@ -3,7 +3,9 @@
 //  CyclingCadenceApp WatchKit App Watch App
 //
 //  Created by Jones, Liam on 20/10/2024.
-// ContentView.swift (Apple Watch App)
+//// ContentView.swift
+//
+
 
 import SwiftUI
 
@@ -12,77 +14,117 @@ struct ContentView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 10) {
-                // Display speed
-                Text(String(format: "Speed: %.2f m/s", viewModel.currentSpeed))
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.green)
+            VStack(spacing: 5) {
+                // Center-aligned session duration
+                HStack {
+                    Text(viewModel.sessionDuration)
+                        .font(.system(size: 14))
+                        .foregroundColor(.cyan)
+                    
+                    Divider()
+                    
+                    Text("Data Count: \(viewModel.dataPointCount)")
+                        .font(.system(size: 14))
+                        .foregroundColor(.cyan)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
 
-                // Display cadence
-                if let cadence = viewModel.estimateCadence() {
-                    Text(String(format: "Cadence: %.0f RPM", cadence))
-                        .font(.system(size: 16, weight: .bold))
+                // Speed display
+                Text(String(format: "%.1f m/s", viewModel.currentSpeed))
+                    .font(.system(size: 36, weight: .bold))
+                    // Icons for position and terrain
+                HStack(spacing: 4) {
+                    Image(systemName: viewModel.isStanding ? "figure.stand" : "figure.walk")
+                        .font(.system(size: 20))
+                    Image(systemName: viewModel.currentTerrain.lowercased() == "road" ? "road.lanes" : "leaf")
+                        .font(.system(size: 20))
+                }
+
+                // Cadence, Data, and Gear displays in a single row
+                HStack(alignment: .top, spacing: 15) {
+                    // Cadence display
+                    VStack {
+                        Image(systemName: "arrow.clockwise.circle")
+                            .font(.system(size: 20))
+                        Text("\(Int(viewModel.estimateCadence() ?? 0))/min")
+                            .font(.system(size: 16))
+                    }
+
+                    // Accelerometer data display
+                    VStack {
+                        Text("Data")
+                            .font(.system(size: 10)) // Reduced size
+                        Text(String(format: "X: %.2f", viewModel.accelerometerData?.acceleration.x ?? 0.0))
+                            .font(.system(size: 9))
+                        Text(String(format: "Y: %.2f", viewModel.accelerometerData?.acceleration.y ?? 0.0))
+                            .font(.system(size: 9))
+                        Text(String(format: "Z: %.2f", viewModel.accelerometerData?.acceleration.z ?? 0.0))
+                            .font(.system(size: 9))
+                    }
+                    .padding(.vertical, 2)
+
+                    // Gear display
+                    VStack {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 20)) 
+                        Text("\(viewModel.currentGear)")
+                            .font(.system(size: 16))
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 0)
+
+                // Connection status
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    Text(viewModel.isPhoneConnected ? "Connected" : "Not Connected")
+                        .font(.system(size: 14))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(viewModel.isPhoneConnected ? Color.green : Color.red)
+                        .cornerRadius(8)
+                        .foregroundColor(.white)
+                        .padding(.top, 5)
+                        .transition(.opacity)
+                        .animation(.easeInOut(duration: 0.5), value: viewModel.isPhoneConnected)
+                }
+
+                // Display model name during prediction
+                if viewModel.isPredicting, let modelName = viewModel.selectedModel?.name {
+                    Text("Model: \(modelName)")
+                        .font(.system(size: 14))
                         .foregroundColor(.blue)
                 }
 
-                // Display data point count
-                Text("Data Points: \(viewModel.dataPointCount)")
-                    .font(.system(size: 14))
-                    .foregroundColor(.orange)
-
-                // Display settings received indicator
-                if viewModel.settingsReceived {
-                    Text("Settings Updated")
-                        .font(.system(size: 12))
-                        .foregroundColor(.green)
-                } else {
-                    Text("Waiting for Settings")
-                        .font(.system(size: 12))
-                        .foregroundColor(.red)
-                }
-
-                // Display bike configuration
-                Text("Gear: \(viewModel.currentGear)")
-                    .font(.system(size: 14))
-                Text("Terrain: \(viewModel.currentTerrain)")
-                    .font(.system(size: 14))
-                Text(viewModel.isStanding ? "Standing" : "Sitting")
-                    .font(.system(size: 14))
-
-                // Display accelerometer data
-                if let accelData = viewModel.accelerometerData {
-                    Text(String(format: "Accel X: %.2f", accelData.acceleration.x))
-                    Text(String(format: "Accel Y: %.2f", accelData.acceleration.y))
-                    Text(String(format: "Accel Z: %.2f", accelData.acceleration.z))
-                }
-
-                // Connection status panel
-                Text(viewModel.isPhoneConnected ? "Phone Connected" : "Phone Not Connected")
-                    .foregroundColor(viewModel.isPhoneConnected ? .green : .red)
-                    .padding(.bottom, 10)
-
-                // Start/Stop recording button
+                // Start/Stop Button
                 Button(action: {
-                    if viewModel.isRecording {
+                    if viewModel.isPredicting {
+                        viewModel.stopPrediction()
+                    } else if viewModel.isRecording {
                         viewModel.stopRecording()
                     } else {
+                        // Start training or prediction based on user selection
+                        // For now, we'll start training
                         viewModel.startRecording()
                     }
                 }) {
-                    Text(viewModel.isRecording ? "Stop Recording" : "Start Recording")
-                        .frame(maxWidth: .infinity, minHeight: 40)
-                        .background(viewModel.isRecording ? Color.red : Color.green)
+                    Text(viewModel.isPredicting ? "Stop Prediction" : (viewModel.isRecording ? "Stop Training" : "Start Training"))
+                        .font(.system(size: 20, weight: .bold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(viewModel.isPredicting ? Color.red : (viewModel.isRecording ? Color.orange : Color.green))
+                        .cornerRadius(50)
                         .foregroundColor(.white)
-                        .cornerRadius(8)
                 }
+                .padding(.top, 10)
             }
             .padding()
-        }
-        .onAppear {
-            viewModel.setup()
+            .onAppear {
+                viewModel.setup()
+            }
         }
     }
 }
+
 #Preview {
     ContentView()
 }
