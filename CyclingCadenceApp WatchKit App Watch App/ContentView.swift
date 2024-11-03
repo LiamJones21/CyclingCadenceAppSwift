@@ -30,7 +30,7 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
 
                 // Speed display
-                Text(String(format: "%.1f m/s", viewModel.currentSpeed))
+                Text(String(format: "%.2f m/s", viewModel.currentSpeed))
                     .font(.system(size: 36, weight: .bold))
                     // Icons for position and terrain
                 HStack(spacing: 4) {
@@ -66,7 +66,7 @@ struct ContentView: View {
                     // Gear display
                     VStack {
                         Image(systemName: "gearshape.fill")
-                            .font(.system(size: 20)) 
+                            .font(.system(size: 20))
                         Text("\(viewModel.currentGear)")
                             .font(.system(size: 16))
                     }
