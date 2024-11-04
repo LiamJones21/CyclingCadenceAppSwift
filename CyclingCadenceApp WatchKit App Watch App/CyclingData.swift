@@ -8,10 +8,15 @@
 import Foundation
 import CoreLocation
 
+
+
 struct SensorData: Codable {
-    var x: Double
-    var y: Double
-    var z: Double
+    var accelerationX: Double
+    var accelerationY: Double
+    var accelerationZ: Double
+    var rotationRateX: Double
+    var rotationRateY: Double
+    var rotationRateZ: Double
 }
 
 struct LocationData: Codable {
@@ -26,7 +31,7 @@ struct CyclingData: Codable {
     var gear: Int
     var terrain: String
     var isStanding: Bool
-    var accelerometerData: SensorData
+    var sensorData: SensorData
     var location: LocationData?
 }
 

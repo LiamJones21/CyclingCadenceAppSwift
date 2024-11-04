@@ -298,22 +298,22 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
             var terrain: [String] = []
             var isStanding: [Bool] = []
 
-            // Process data into windows
-            for start in stride(from: 0, to: data.count - windowSize, by: windowStep) {
-                let end = start + windowSize
-                let window = Array(data[start..<end])
-
-                // Extract features
-                let featureValues = extractFeatures(window: window, includeFFT: includeFFT, includeWavelet: includeWavelet)
-
-                meanAccelX.append(featureValues.meanAccelX)
-                meanAccelY.append(featureValues.meanAccelY)
-                meanAccelZ.append(featureValues.meanAccelZ)
-                speed.append(featureValues.meanSpeed)
-                cadence.append(featureValues.meanCadence)
-                terrain.append(featureValues.modeTerrain)
-                isStanding.append(featureValues.modeIsStanding)
-            }
+//            // Process data into windows
+//            for start in stride(from: 0, to: data.count - windowSize, by: windowStep) {
+//                let end = start + windowSize
+//                let window = Array(data[start..<end])
+//
+//                // Extract features
+////                let featureValues = extractFeatures(window: window, includeFFT: includeFFT, includeWavelet: includeWavelet)
+//
+//                meanAccelX.append(featureValues.meanAccelX)
+//                meanAccelY.append(featureValues.meanAccelY)
+//                meanAccelZ.append(featureValues.meanAccelZ)
+//                speed.append(featureValues.meanSpeed)
+//                cadence.append(featureValues.meanCadence)
+//                terrain.append(featureValues.modeTerrain)
+//                isStanding.append(featureValues.modeIsStanding)
+//            }
 
             // Assign feature arrays to the dictionary
             features["meanAccelX"] = meanAccelX
@@ -327,27 +327,30 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
             return features
         }
         
-        func extractFeatures(window: [CyclingData], includeFFT: Bool, includeWavelet: Bool) -> (meanAccelX: Double, meanAccelY: Double, meanAccelZ: Double, meanSpeed: Double, meanCadence: Double, modeTerrain: String, modeIsStanding: Bool) {
-            let accelX = window.map { $0.accelerometerData.x }
-            let accelY = window.map { $0.accelerometerData.y }
-            let accelZ = window.map { $0.accelerometerData.z }
-
-            let meanAccelX = accelX.reduce(0, +) / Double(accelX.count)
-            let meanAccelY = accelY.reduce(0, +) / Double(accelY.count)
-            let meanAccelZ = accelZ.reduce(0, +) / Double(accelZ.count)
-            let meanSpeed = window.map { $0.speed }.reduce(0, +) / Double(window.count)
-            let meanCadence = window.map { $0.cadence }.reduce(0, +) / Double(window.count)
-
-            let terrainCounts = Dictionary(grouping: window.map { $0.terrain }, by: { $0 }).mapValues { $0.count }
-            let modeTerrain = terrainCounts.max(by: { $0.value < $1.value })?.key ?? "Unknown"
-
-            let isStandingCounts = Dictionary(grouping: window.map { $0.isStanding }, by: { $0 }).mapValues { $0.count }
-            let modeIsStanding = isStandingCounts.max(by: { $0.value < $1.value })?.key ?? false
-
-            // Additional features can be calculated here, including FFT and Wavelet transforms, if implemented.
-
-            return (meanAccelX, meanAccelY, meanAccelZ, meanSpeed, meanCadence, modeTerrain, modeIsStanding)
-        }
+//        func extractFeatures(window: [CyclingData], includeFFT: Bool, includeWavelet: Bool) -> (meanAccelX: Double, meanAccelY: Double, meanAccelZ: Double, meanSpeed: Double, meanCadence: Double, modeTerrain: String, modeIsStanding: Bool) {
+//            func extractFeatures(window: [CyclingData], includeFFT: Bool, includeWavelet: Bool) -> (0.0) {
+////            let accelX = window.map { $0.accelerometerData.x }
+////            let accelY = window.map { $0.accelerometerData.y }
+////            let accelZ = window.map { $0.accelerometerData.z }
+////
+////            let meanAccelX = accelX.reduce(0, +) / Double(accelX.count)
+////            let meanAccelY = accelY.reduce(0, +) / Double(accelY.count)
+////            let meanAccelZ = accelZ.reduce(0, +) / Double(accelZ.count)
+////            let meanSpeed = window.map { $0.speed }.reduce(0, +) / Double(window.count)
+////            let meanCadence = window.map { $0.cadence }.reduce(0, +) / Double(window.count)
+////
+////            let terrainCounts = Dictionary(grouping: window.map { $0.terrain }, by: { $0 }).mapValues { $0.count }
+////            let modeTerrain = terrainCounts.max(by: { $0.value < $1.value })?.key ?? "Unknown"
+////
+////            let isStandingCounts = Dictionary(grouping: window.map { $0.isStanding }, by: { $0 }).mapValues { $0.count }
+////            let modeIsStanding = isStandingCounts.max(by: { $0.value < $1.value })?.key ?? false
+////
+////            // Additional features can be calculated here, including FFT and Wavelet transforms, if implemented.
+//            
+////            let meanAccelX, meanAccelY, meanAccelZ, meanSpeed, meanCadence, modeTerrain, modeIsStanding = 0.0
+////            return (meanAccelX, meanAccelY, meanAccelZ, meanSpeed, meanCadence, modeTerrain, modeIsStanding)
+//                return 0.0
+//        }
         func preprocessData(data: [CyclingData], windowSize: Int, windowStep: Int, includeFFT: Bool, includeWavelet: Bool) -> [String: [Any]] {
             // Implement preprocessing steps similar to those in Preprocessing.swift
             // Return a dictionary where keys are column names and values are arrays of column data
@@ -890,6 +893,24 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
                     print("Error decoding cycling data from watch: \(error.localizedDescription)")
                 }
             }
+            if let isRecordingFromWatch = userInfo["isRecording"] as? Bool,
+                       let recordingStateLastChangedFromWatch = userInfo["recordingStateLastChanged"] as? TimeInterval {
+                        
+                        let watchRecordingStateLastChanged = Date(timeIntervalSince1970: recordingStateLastChangedFromWatch)
+                        
+                        if watchRecordingStateLastChanged > self.recordingStateLastChanged {
+                            if self.isRecording != isRecordingFromWatch {
+                                self.isRecording = isRecordingFromWatch
+                                self.recordingStateLastChanged = watchRecordingStateLastChanged
+                                print("Recording state updated from watch via UserInfo: \(isRecordingFromWatch)")
+                                if isRecordingFromWatch {
+                                    self.startRecording(synchronized: false)
+                                } else {
+                                    self.stopRecording(synchronized: false)
+                                }
+                            }
+                        }
+                    }
         }
     }
 

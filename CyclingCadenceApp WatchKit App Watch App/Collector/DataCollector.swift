@@ -33,6 +33,8 @@ class DataCollector {
         unsentData.removeAll()
     }
 
+    // DataCollector.swift
+
     func collectData(
         deviceMotionData: CMDeviceMotion,
         speed: Double,
@@ -45,14 +47,19 @@ class DataCollector {
         let accelerationX = deviceMotionData.userAcceleration.x - speedCalculator.accelOffsetX
         let accelerationY = deviceMotionData.userAcceleration.y - speedCalculator.accelOffsetY
         let accelerationZ = deviceMotionData.userAcceleration.z - speedCalculator.accelOffsetZ
-        
-        print("Acceleration: \(accelerationX), \(accelerationY), \(accelerationZ), Rotation: \(deviceMotionData.rotationRate.x), \(deviceMotionData.rotationRate.y), \(deviceMotionData.rotationRate.z), offset: \(speedCalculator.accelOffsetX), \(speedCalculator.accelOffsetY), \(speedCalculator.accelOffsetZ)")
+
+        let rotationRateX = deviceMotionData.rotationRate.x - speedCalculator.rotationOffsetX
+        let rotationRateY = deviceMotionData.rotationRate.y - speedCalculator.rotationOffsetY
+        let rotationRateZ = deviceMotionData.rotationRate.z - speedCalculator.rotationOffsetZ
 
         // Collect data
         let sensorData = SensorData(
-            x: accelerationX,
-            y: accelerationY,
-            z: accelerationZ
+            accelerationX: accelerationX,
+            accelerationY: accelerationY,
+            accelerationZ: accelerationZ,
+            rotationRateX: rotationRateX,
+            rotationRateY: rotationRateY,
+            rotationRateZ: rotationRateZ
         )
 
         let locationData: LocationData? = location != nil ? LocationData(
@@ -69,13 +76,14 @@ class DataCollector {
             gear: gear,
             terrain: terrain,
             isStanding: isStanding,
-            accelerometerData: sensorData,
+            sensorData: sensorData,
             location: locationData
         )
 
         collectedData.append(cyclingData)
         unsentData.append(cyclingData)
     }
+
 
     func getUnsentData() -> [CyclingData] {
         return unsentData

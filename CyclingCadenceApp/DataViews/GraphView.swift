@@ -3,82 +3,88 @@
 //  CyclingCadenceApp
 //
 //  Created by Jones, Liam on 21/10/2024.
+// GraphView.swift
+// CyclingCadenceApp
+
 import SwiftUI
 import Charts
 
 struct GraphView: View {
     let session: Session
 
-   @State private var selectedDataTypes: Set<DataType> = [.speed]
-   @State private var applyMovingAverage: Bool = false
-   @State private var movingAveragePeriod: Double = 5.0
+    @State private var selectedDataTypes: Set<DataType> = [.speed]
+    @State private var applyMovingAverage: Bool = false
+    @State private var movingAveragePeriod: Double = 5.0
 
-   @State private var timeWindowStart: Double
-   @State private var timeWindowEnd: Double
+    @State private var timeWindowStart: Double
+    @State private var timeWindowEnd: Double
 
-   @State private var sessionStartTime: TimeInterval
-   @State private var maxTimeValue: Double
+    @State private var sessionStartTime: TimeInterval
+    @State private var maxTimeValue: Double
 
-   @StateObject private var rangeSliderViewModel: RangeSlider.ViewModel
+    @StateObject private var rangeSliderViewModel: RangeSlider.ViewModel
 
-   @State private var dataCache: [DataType: [ChartDataPoint]] = [:]
+    @State private var dataCache: [DataType: [ChartDataPoint]] = [:]
 
-   enum DataType: String, CaseIterable, Identifiable {
-       case speed = "Speed"
-       case cadence = "Cadence"
-       case accelerometerX = "Accel X"
-       case accelerometerY = "Accel Y"
-       case accelerometerZ = "Accel Z"
+    enum DataType: String, CaseIterable, Identifiable {
+        case speed = "Speed"
+        case cadence = "Cadence"
+        case accelerometerX = "Accel X"
+        case accelerometerY = "Accel Y"
+        case accelerometerZ = "Accel Z"
+        case rotationRateX = "Rotation X"
+        case rotationRateY = "Rotation Y"
+        case rotationRateZ = "Rotation Z"
 
-       var id: String { self.rawValue }
-   }
+        var id: String { self.rawValue }
+    }
 
-   init(session: Session) {
-       self.session = session
+    init(session: Session) {
+        self.session = session
 
-       if let firstTimestamp = session.data.first?.timestamp.timeIntervalSinceReferenceDate,
-          let lastTimestamp = session.data.last?.timestamp.timeIntervalSinceReferenceDate {
-           let totalDuration = lastTimestamp - firstTimestamp
+        if let firstTimestamp = session.data.first?.timestamp.timeIntervalSinceReferenceDate,
+           let lastTimestamp = session.data.last?.timestamp.timeIntervalSinceReferenceDate {
+            let totalDuration = lastTimestamp - firstTimestamp
 
-           let initialLowerValue = totalDuration * 0.25
-           let initialUpperValue = totalDuration * 0.75
-           let sliderBounds = 0.0...totalDuration
+            let initialLowerValue = totalDuration * 0.25
+            let initialUpperValue = totalDuration * 0.75
+            let sliderBounds = 0.0...totalDuration
 
-           self._sessionStartTime = State(initialValue: firstTimestamp)
-           self._maxTimeValue = State(initialValue: totalDuration)
-           self._timeWindowStart = State(initialValue: initialLowerValue)
-           self._timeWindowEnd = State(initialValue: initialUpperValue)
+            self._sessionStartTime = State(initialValue: firstTimestamp)
+            self._maxTimeValue = State(initialValue: totalDuration)
+            self._timeWindowStart = State(initialValue: initialLowerValue)
+            self._timeWindowEnd = State(initialValue: initialUpperValue)
 
-           _rangeSliderViewModel = StateObject(wrappedValue: RangeSlider.ViewModel(
-               sliderPosition: initialLowerValue...initialUpperValue,
-               sliderBounds: sliderBounds
-           ))
-       } else {
-           // Fallback values
-           self._sessionStartTime = State(initialValue: 0)
-           self._maxTimeValue = State(initialValue: 1)
-           self._timeWindowStart = State(initialValue: 0)
-           self._timeWindowEnd = State(initialValue: 1)
+            _rangeSliderViewModel = StateObject(wrappedValue: RangeSlider.ViewModel(
+                sliderPosition: initialLowerValue...initialUpperValue,
+                sliderBounds: sliderBounds
+            ))
+        } else {
+            // Fallback values
+            self._sessionStartTime = State(initialValue: 0)
+            self._maxTimeValue = State(initialValue: 1)
+            self._timeWindowStart = State(initialValue: 0)
+            self._timeWindowEnd = State(initialValue: 1)
 
-           _rangeSliderViewModel = StateObject(wrappedValue: RangeSlider.ViewModel(
-               sliderPosition: 0...1,
-               sliderBounds: 0...1
-           ))
-       }
-   }
+            _rangeSliderViewModel = StateObject(wrappedValue: RangeSlider.ViewModel(
+                sliderPosition: 0...1,
+                sliderBounds: 0...1
+            ))
+        }
+    }
 
-   var body: some View {
-       VStack {
-           dataTypeSelectionView
-           movingAverageToggleView
-           timeWindowSlider
-           timeWindowLabels
-           chartView
-           settingsBarsView
-       }
-       .navigationTitle("Data Graph")
-       .navigationBarTitleDisplayMode(.inline)
-   }
+    var body: some View {
+        VStack {
+            dataTypeSelectionView
+            movingAverageToggleView
+            timeWindowSlider
+            timeWindowLabels
+            chartView
+            settingsBarsView
+        }
+        .navigationTitle("Data Graph")
+        .navigationBarTitleDisplayMode(.inline)
+    }
 
     // MARK: - Subviews
 
@@ -236,6 +242,7 @@ struct GraphView: View {
             )
         }
     }
+
     var maxGearValue: Int {
         session.data.map { $0.gear }.max() ?? 1
     }
@@ -307,11 +314,17 @@ struct GraphView: View {
         case .cadence:
             values = dataPoints.map { $0.cadence }
         case .accelerometerX:
-            values = dataPoints.map { $0.accelerometerData.x }
+            values = dataPoints.map { $0.sensorData.accelerationX }
         case .accelerometerY:
-            values = dataPoints.map { $0.accelerometerData.y }
+            values = dataPoints.map { $0.sensorData.accelerationY }
         case .accelerometerZ:
-            values = dataPoints.map { $0.accelerometerData.z }
+            values = dataPoints.map { $0.sensorData.accelerationZ }
+        case .rotationRateX:
+            values = dataPoints.map { $0.sensorData.rotationRateX }
+        case .rotationRateY:
+            values = dataPoints.map { $0.sensorData.rotationRateY }
+        case .rotationRateZ:
+            values = dataPoints.map { $0.sensorData.rotationRateZ }
         }
 
         if applyMovingAverage {

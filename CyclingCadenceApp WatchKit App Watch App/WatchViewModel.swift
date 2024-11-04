@@ -39,6 +39,8 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
     @Published var gearRatios: [String] = []
     @Published var wheelCircumference: Double = 2.1 // Default value in meters
 
+    private var dataSendTimer: Timer?
+    
     // Managers
     private let healthKitManager = HealthKitManager()
     private let sensorManager = SensorManager()
@@ -46,6 +48,26 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
     private let connectivityManager = ConnectivityManager()
     private let predictionManager = PredictionManager()
     private let dataCollector: DataCollector
+    
+    // Variables to store accelerometer and rotation rate offsets
+        private var accelOffsetX: Double = 0.0
+        private var accelOffsetY: Double = 0.0
+        private var accelOffsetZ: Double = 0.0
+
+        private var rotationOffsetX: Double = 0.0
+        private var rotationOffsetY: Double = 0.0
+        private var rotationOffsetZ: Double = 0.0
+
+        private var offsetSamplingStartTime: TimeInterval?
+        private var offsetsCalculated = false
+
+        // For averaging offsets over the first second
+        private var offsetSamplesAccelX: [Double] = []
+        private var offsetSamplesAccelY: [Double] = []
+        private var offsetSamplesAccelZ: [Double] = []
+        private var offsetSamplesRotationX: [Double] = []
+        private var offsetSamplesRotationY: [Double] = []
+        private var offsetSamplesRotationZ: [Double] = []
 
         
     private let locationManager = LocationManager()
@@ -83,7 +105,12 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
         locationManager.startUpdatingLocation()
         dataCollector.resetData()
         startDurationTimer()
+        resetOffsets()
         speedCalculator.reset() // Reset accelerometer data average
+        
+        dataSendTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                self.periodicDataSend()
+            }
 
         // Update published properties
         DispatchQueue.main.async {
@@ -103,6 +130,9 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
         locationManager.stopUpdatingLocation()
         stopDurationTimer()
         speedCalculator.stopSession() // Stop session in speed calculator
+        
+        dataSendTimer?.invalidate()
+            dataSendTimer = nil
 
         // Update published properties
         DispatchQueue.main.async {
@@ -120,6 +150,13 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
 
     // MARK: - Duration Timer Methods
 
+    private func periodicDataSend() {
+        let unsentDataCount = dataCollector.getUnsentData().count
+        if unsentDataCount >= 500 || (unsentDataCount > 0 && isPhoneConnected) {
+            sendDataToPhone()
+        }
+    }
+    
     private func startDurationTimer() {
         durationTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             self.updateSessionDuration()
@@ -148,19 +185,50 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
         }
     }
 
-    // MARK: - SensorManagerDelegate
+    func didUpdateDeviceMotionData(_ data: CMDeviceMotion) {
+            let currentTime = Date().timeIntervalSince1970
 
-        func didUpdateDeviceMotionData(_ data: CMDeviceMotion) {
-            DispatchQueue.main.async {
-                self.accelerometerData = data // You might need to adjust this if you still use accelerometerData elsewhere
+            // Collect offset samples over the first second
+            if !offsetsCalculated {
+                if offsetSamplingStartTime == nil {
+                    offsetSamplingStartTime = currentTime
+                }
+
+                offsetSamplesAccelX.append(data.userAcceleration.x)
+                offsetSamplesAccelY.append(data.userAcceleration.y)
+                offsetSamplesAccelZ.append(data.userAcceleration.z)
+
+                offsetSamplesRotationX.append(data.rotationRate.x)
+                offsetSamplesRotationY.append(data.rotationRate.y)
+                offsetSamplesRotationZ.append(data.rotationRate.z)
+
+                if currentTime - offsetSamplingStartTime! >= 1.0 {
+                    // Calculate average offsets
+                    accelOffsetX = offsetSamplesAccelX.reduce(0, +) / Double(offsetSamplesAccelX.count)
+                    accelOffsetY = offsetSamplesAccelY.reduce(0, +) / Double(offsetSamplesAccelY.count)
+                    accelOffsetZ = offsetSamplesAccelZ.reduce(0, +) / Double(offsetSamplesAccelZ.count)
+
+                    rotationOffsetX = offsetSamplesRotationX.reduce(0, +) / Double(offsetSamplesRotationX.count)
+                    rotationOffsetY = offsetSamplesRotationY.reduce(0, +) / Double(offsetSamplesRotationY.count)
+                    rotationOffsetZ = offsetSamplesRotationZ.reduce(0, +) / Double(offsetSamplesRotationZ.count)
+
+                    offsetsCalculated = true
+                    print("Calculated offsets:")
+                    print("Accel X: \(accelOffsetX), Y: \(accelOffsetY), Z: \(accelOffsetZ)")
+                    print("Rotation X: \(rotationOffsetX), Y: \(rotationOffsetY), Z: \(rotationOffsetZ)")
+                } else {
+                    // Not enough samples yet, return
+                    return
+                }
             }
+        
+
+        
+            // Update speed from accelerometer data
             speedCalculator.processDeviceMotionData(data)
+        
             DispatchQueue.main.async {
                 self.currentSpeed = self.speedCalculator.currentSpeed
-            }
-
-            // Continue to estimate cadence
-            DispatchQueue.main.async {
                 self.currentCadence = self.estimateCadence() ?? 0.0
             }
 
@@ -199,6 +267,26 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
 //        let cadence = (currentSpeed / wheelCircumference) * gearRatio * 60
 //        return cadence
 //    }
+    private func resetOffsets() {
+        accelOffsetX = 0.0
+        accelOffsetY = 0.0
+        accelOffsetZ = 0.0
+
+        rotationOffsetX = 0.0
+        rotationOffsetY = 0.0
+        rotationOffsetZ = 0.0
+
+        offsetSamplingStartTime = nil
+        offsetsCalculated = false
+
+        offsetSamplesAccelX.removeAll()
+        offsetSamplesAccelY.removeAll()
+        offsetSamplesAccelZ.removeAll()
+
+        offsetSamplesRotationX.removeAll()
+        offsetSamplesRotationY.removeAll()
+        offsetSamplesRotationZ.removeAll()
+    }
     // MARK: - Cadence Estimation
     
     func estimateCadence() -> Double? {
