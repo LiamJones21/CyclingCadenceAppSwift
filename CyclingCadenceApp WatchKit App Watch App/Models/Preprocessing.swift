@@ -54,4 +54,13 @@ struct Preprocessing {
         // Placeholder: returning empty array
         return []
     }
+    static func computeStatistics(for values: [Double]) -> [Double] {
+            guard !values.isEmpty else { return [0.0, 0.0] }
+
+            let mean = values.reduce(0, +) / Double(values.count)
+            let variance = values.reduce(0) { $0 + pow($1 - mean, 2) } / Double(values.count)
+            let stdDev = sqrt(variance)
+
+            return [mean, stdDev]
+        }
 }

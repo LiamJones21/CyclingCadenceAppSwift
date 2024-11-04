@@ -3,9 +3,7 @@
 //  CyclingCadenceApp WatchKit App Watch App
 //
 //  Created by Jones, Liam on 20/10/2024.
-//// ContentView.swift
-//
-
+// ContentView.swift
 
 import SwiftUI
 
@@ -20,9 +18,9 @@ struct ContentView: View {
                     Text(viewModel.sessionDuration)
                         .font(.system(size: 14))
                         .foregroundColor(.cyan)
-                    
+
                     Divider()
-                    
+
                     Text("Data Count: \(viewModel.dataPointCount)")
                         .font(.system(size: 14))
                         .foregroundColor(.cyan)
@@ -32,7 +30,8 @@ struct ContentView: View {
                 // Speed display
                 Text(String(format: "%.2f m/s", viewModel.currentSpeed))
                     .font(.system(size: 36, weight: .bold))
-                    // Icons for position and terrain
+
+                // Icons for position and terrain
                 HStack(spacing: 4) {
                     Image(systemName: viewModel.isStanding ? "figure.stand" : "figure.walk")
                         .font(.system(size: 20))
@@ -54,11 +53,11 @@ struct ContentView: View {
                     VStack {
                         Text("Data")
                             .font(.system(size: 10)) // Reduced size
-                        Text(String(format: "X: %.2f", viewModel.accelerometerData?.acceleration.x ?? 0.0))
+                        Text(String(format: "X: %.2f", viewModel.accelerometerDataSaved?.acceleration.x ?? 0.0))
                             .font(.system(size: 9))
-                        Text(String(format: "Y: %.2f", viewModel.accelerometerData?.acceleration.y ?? 0.0))
+                        Text(String(format: "Y: %.2f", viewModel.accelerometerDataSaved?.acceleration.y ?? 0.0))
                             .font(.system(size: 9))
-                        Text(String(format: "Z: %.2f", viewModel.accelerometerData?.acceleration.z ?? 0.0))
+                        Text(String(format: "Z: %.2f", viewModel.accelerometerDataSaved?.acceleration.z ?? 0.0))
                             .font(.system(size: 9))
                     }
                     .padding(.vertical, 2)
@@ -98,16 +97,14 @@ struct ContentView: View {
                 // Start/Stop Button
                 Button(action: {
                     if viewModel.isPredicting {
-                        viewModel.stopPrediction()
+//                        viewModel.stopPrediction()
                     } else if viewModel.isRecording {
                         viewModel.stopRecording()
                     } else {
-                        // Start training or prediction based on user selection
-                        // For now, we'll start training
                         viewModel.startRecording()
                     }
                 }) {
-                    Text(viewModel.isPredicting ? "Stop Prediction" : (viewModel.isRecording ? "Stop Training" : "Start Training"))
+                    Text(viewModel.isPredicting ? "Stop Prediction" : (viewModel.isRecording ? "Stop Recording" : "Start Recording"))
                         .font(.system(size: 20, weight: .bold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
@@ -128,3 +125,5 @@ struct ContentView: View {
 #Preview {
     ContentView()
 }
+
+
