@@ -26,19 +26,14 @@ class ConnectivityManager: NSObject, WCSessionDelegate {
     }
 
     func sendRecordingState(isRecording: Bool, timestamp: Date) {
-        if let session = sessionWC {
+        if let session = sessionWC, session.isReachable {
             let data: [String: Any] = [
                 "isRecording": isRecording,
                 "recordingStateLastChanged": timestamp.timeIntervalSince1970
             ]
-            if session.isReachable {
-                session.sendMessage(data, replyHandler: nil, errorHandler: { error in
-                    print("Error sending recording state: \(error.localizedDescription)")
-                })
-            } else {
-                session.transferUserInfo(data)
-                print("Transferred recording state via UserInfo.")
-            }
+            session.sendMessage(data, replyHandler: nil, errorHandler: { error in
+                print("Error sending recording state: \(error.localizedDescription)")
+            })
         }
     }
 
@@ -64,7 +59,7 @@ class ConnectivityManager: NSObject, WCSessionDelegate {
                 let encodedData = try encoder.encode(data)
                 let userInfo: [String: Any] = ["cyclingData": encodedData]
                 session.transferUserInfo(userInfo)
-                print("Transferred collected data to phone via UserInfo.")
+                print("Transferred collected data to phone.")
             } catch {
                 print("Error encoding cycling data: \(error.localizedDescription)")
             }

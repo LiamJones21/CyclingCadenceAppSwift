@@ -12,7 +12,7 @@ import CoreLocation
 
 class DataCollector {
     private var collectedData: [CyclingData] = []
-    private var unsentData: [CyclingData] = []
+    public var unsentData: [CyclingData] = []
 
     var gearRatios: [String] = []
     var wheelCircumference: Double = 2.1 // Default value in meters
