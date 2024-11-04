@@ -157,6 +157,7 @@ class AdvancedKalmanFilter {
     private var Q: Double = 0.1 // Process noise covariance
     private let accelerometerNoise: Double = 0.1 // Accelerometer noise covariance
     private let gpsBaseNoise: Double = 0.05 // Base GPS noise covariance
+    private let maxProcessNoise: Double = 1.0 // Maximum allowed value for Q
     private var lastGPSUpdateTime: TimeInterval?
 
     func predict(acceleration: Double, deltaTime: Double) {
@@ -169,34 +170,40 @@ class AdvancedKalmanFilter {
         if let lastGPSUpdateTime = lastGPSUpdateTime {
             let timeSinceLastGPS = Date().timeIntervalSince1970 - lastGPSUpdateTime
             if timeSinceLastGPS > 1.0 {
-                Q += 0.01 // Gradually increase process noise
+                Q = min(Q + 0.01, maxProcessNoise) // Use maxProcessNoise as upper bound
             }
         } else {
             // No GPS data received yet
-            Q += 0.01
+            Q = min(Q + 0.01, maxProcessNoise) // Use maxProcessNoise as upper bound
         }
     }
 
     func updateWithGPS(speedMeasurement: Double, gpsAccuracy: Double) {
         // Adjust measurement noise based on GPS accuracy
-        let R = gpsBaseNoise * (gpsAccuracy / 5.0)
-        let adjustedR = min(max(R, 1.0), 100.0)
+        var R = gpsBaseNoise * (gpsAccuracy / 5.0)
+        R = min(max(R, 0.1), 10.0) // Adjust bounds for R
+
+        // Increase R if speed is very low (e.g., below 0.5 m/s)
+        if speedMeasurement < 0.5 {
+            R = 10.0 // Increase measurement noise to trust GPS less
+        }
 
         // Kalman gain
-        let K = P / (P + adjustedR)
+        let K = P / (P + R)
         // State update
         x += K * (speedMeasurement - x)
         // Covariance update
         P *= (1 - K)
 
         // Reset process noise if GPS is reliable
-        if gpsAccuracy < 10.0 {
+        if gpsAccuracy < 10.0 && speedMeasurement >= 0.5 {
             Q = 0.1 // Reset to default
         }
 
         // Update last GPS update time
         lastGPSUpdateTime = Date().timeIntervalSince1970
     }
+
 
     func reset() {
         x = 0.0

@@ -35,6 +35,23 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
     @Published var sessionDuration: String = "00:00"
     @Published var gearRatios: [String] = []
     @Published var wheelCircumference: Double = 2.1 // Default value in meters
+    
+    // Settings Properties
+    @Published var useAccelerometer: Bool = false
+    @Published var useGPS: Bool = true
+
+    // Accelerometer settings
+    @Published var accelerometerTuningValue: Double = 1.0
+    @Published var accelerometerWeightingX: Double = 1.0
+    @Published var accelerometerWeightingY: Double = 1.0
+    @Published var accelerometerWeightingZ: Double = 1.0
+    @Published var useLowPassFilter: Bool = false
+    @Published var lowPassFilterAlpha: Double = 0.1
+
+    // Kalman filter settings
+    @Published var kalmanProcessNoise: Double = 0.1
+    @Published var kalmanMeasurementNoise: Double = 0.1
+    @Published var gpsAccuracyThreshold: Double = 10.0
 
     // Managers
     private let healthKitManager = HealthKitManager()
@@ -69,6 +86,7 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
         sensorManager.setup()
         locationManager.setup()
         healthKitManager.authorizeHealthKit()
+        locationManager.startUpdatingLocation()
 
         // Start sensors immediately to calculate speed all the time
         sensorManager.startSensors()
@@ -99,7 +117,7 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
     func stopRecording(synchronized: Bool = true) {
         healthKitManager.stopWorkout()
         // sensorManager.stopSensors() // Keep sensors running
-        locationManager.stopUpdatingLocation()
+//        locationManager.stopUpdatingLocation()
         stopDurationTimer()
         speedCalculator.stopSession() // Stop session in speed calculator
 
@@ -178,7 +196,7 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
                 }
 
                 // Batch sending logic
-                if dataCollector.getUnsentData().count >= 10000 {
+                if dataCollector.getUnsentData().count >= 200 {
                     sendDataToPhone()
                 }
             }
@@ -212,7 +230,7 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
         self.sendingBatches = true
         let unsentData = dataCollector.getUnsentData()
         dataCollector.clearUnsentData()
-        let batchSize = 400
+        let batchSize = 300
 
 
         guard !unsentData.isEmpty else { return }

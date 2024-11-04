@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var viewModel = WatchViewModel()
+    @State private var showSettings = false
 
     var body: some View {
         ScrollView {
@@ -117,6 +118,15 @@ struct ContentView: View {
             .padding()
             .onAppear {
                 viewModel.setup()
+            }
+            // Long-press gesture to show settings
+            .onLongPressGesture {
+                showSettings = true
+            }
+            // Present the SettingsView when showSettings is true
+            .sheet(isPresented: $showSettings) {
+                SettingsView()
+                    .environmentObject(viewModel)
             }
         }
     }
