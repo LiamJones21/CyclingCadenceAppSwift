@@ -3,7 +3,7 @@
 //  CyclingCadenceApp
 //
 //  Created by Jones, Liam on 11/4/24.
-// SettingsView.swift
+/// SettingsView.swift
 
 import SwiftUI
 
@@ -19,27 +19,26 @@ struct SettingsView: View {
     @State private var showProcessNoiseInput = false
     @State private var showMeasurementNoiseInput = false
     @State private var showGPSAccuracyThresholdInput = false
+    @State private var showGPSAccuracyLowerBoundInput = false
+    @State private var showGPSAccuracyUpperBoundInput = false
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // add a settings title
                 Text("Settings")
                     .font(.title)
                     .padding(.horizontal)
-                // Acceleration Toggle
+                
                 Toggle("Use Accelerometer", isOn: $viewModel.useAccelerometer)
                     .toggleStyle(SwitchToggleStyle())
                     .padding(.horizontal)
                 
                 if viewModel.useAccelerometer {
-                    // Accelerometer Settings
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Accelerometer Settings")
                             .font(.headline)
                             .padding(.horizontal)
                         
-                        // Tuning Value with increment buttons and manual input
                         HStack {
                             Text("Tuning Value:")
                             Spacer()
@@ -65,11 +64,9 @@ struct SettingsView: View {
                         }
                         .padding(.horizontal)
                         
-                        // Direction Weightings
                         Text("Direction Weightings:")
                             .padding(.horizontal)
                         
-                        // Weighting X with increment buttons and manual input
                         HStack {
                             Text("X:")
                             Spacer()
@@ -95,7 +92,6 @@ struct SettingsView: View {
                         }
                         .padding(.horizontal)
                         
-                        // Weighting Y with increment buttons and manual input
                         HStack {
                             Text("Y:")
                             Spacer()
@@ -121,7 +117,6 @@ struct SettingsView: View {
                         }
                         .padding(.horizontal)
                         
-                        // Weighting Z with increment buttons and manual input
                         HStack {
                             Text("Z:")
                             Spacer()
@@ -147,13 +142,11 @@ struct SettingsView: View {
                         }
                         .padding(.horizontal)
                         
-                        // Low-Pass Filter Toggle
                         Toggle("Use Low-Pass Filter", isOn: $viewModel.useLowPassFilter)
                             .toggleStyle(SwitchToggleStyle())
                             .padding(.horizontal)
                         
                         if viewModel.useLowPassFilter {
-                            // Low-Pass Filter Alpha with increment buttons and manual input
                             HStack {
                                 Text("Filter Alpha:")
                                 Spacer()
@@ -183,26 +176,74 @@ struct SettingsView: View {
                     .padding(.top, 10)
                 }
                 
-                // GPS Toggle
                 Toggle("Use GPS", isOn: $viewModel.useGPS)
                     .toggleStyle(SwitchToggleStyle())
                     .padding(.horizontal)
                 
                 if viewModel.useGPS {
-                    // GPS Settings (if any can be added here in future)
-                    Text("GPS is enabled for speed calculation.")
-                        .font(.subheadline)
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("GPS Settings")
+                            .font(.headline)
+                            .padding(.horizontal)
+                        
+                        HStack {
+                            Text("GPS Accuracy Lower Bound:")
+                            Spacer()
+                            Button(action: {
+                                viewModel.gpsAccuracyLowerBound -= 1.0
+                            }) {
+                                Image(systemName: "minus.circle")
+                                    .foregroundColor(.blue)
+                            }
+                            Button(action: {
+                                showGPSAccuracyLowerBoundInput = true
+                            }) {
+                                Text(String(format: "%.0f m", viewModel.gpsAccuracyLowerBound))
+                                    .foregroundColor(.blue)
+                                    .underline()
+                            }
+                            Button(action: {
+                                viewModel.gpsAccuracyLowerBound += 1.0
+                            }) {
+                                Image(systemName: "plus.circle")
+                                    .foregroundColor(.blue)
+                            }
+                        }
                         .padding(.horizontal)
+                        
+                        HStack {
+                            Text("GPS Accuracy Upper Bound:")
+                            Spacer()
+                            Button(action: {
+                                viewModel.gpsAccuracyUpperBound -= 1.0
+                            }) {
+                                Image(systemName: "minus.circle")
+                                    .foregroundColor(.blue)
+                            }
+                            Button(action: {
+                                showGPSAccuracyUpperBoundInput = true
+                            }) {
+                                Text(String(format: "%.0f m", viewModel.gpsAccuracyUpperBound))
+                                    .foregroundColor(.blue)
+                                    .underline()
+                            }
+                            Button(action: {
+                                viewModel.gpsAccuracyUpperBound += 1.0
+                            }) {
+                                Image(systemName: "plus.circle")
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
                 }
                 
-                // Kalman Filter Settings
                 if viewModel.useAccelerometer && viewModel.useGPS {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Kalman Filter Settings")
                             .font(.headline)
                             .padding(.horizontal)
                         
-                        // Process Noise Q with increment buttons and manual input
                         HStack {
                             Text("Process Noise Q:")
                             Spacer()
@@ -228,7 +269,6 @@ struct SettingsView: View {
                         }
                         .padding(.horizontal)
                         
-                        // Measurement Noise R with increment buttons and manual input
                         HStack {
                             Text("Measurement Noise R:")
                             Spacer()
@@ -253,39 +293,12 @@ struct SettingsView: View {
                             }
                         }
                         .padding(.horizontal)
-                        
-                        // GPS Accuracy Threshold with increment buttons and manual input
-                        HStack {
-                            Text("GPS Accuracy Threshold:")
-                            Spacer()
-                            Button(action: {
-                                viewModel.gpsAccuracyThreshold -= 1.0
-                            }) {
-                                Image(systemName: "minus.circle")
-                                    .foregroundColor(.blue)
-                            }
-                            Button(action: {
-                                showGPSAccuracyThresholdInput = true
-                            }) {
-                                Text(String(format: "%.0f m", viewModel.gpsAccuracyThreshold))
-                                    .foregroundColor(.blue)
-                                    .underline()
-                            }
-                            Button(action: {
-                                viewModel.gpsAccuracyThreshold += 1.0
-                            }) {
-                                Image(systemName: "plus.circle")
-                                    .foregroundColor(.blue)
-                            }
-                        }
-                        .padding(.horizontal)
                     }
                     .padding(.top, 10)
                 }
                 
                 Spacer()
                 
-                // Done Button
                 Button(action: {
                     self.presentationMode.wrappedValue.dismiss()
                 }) {
@@ -295,19 +308,8 @@ struct SettingsView: View {
                         .padding()
                 }
             }
-            // Removed .navigationBarTitle and .navigationBarItems
             .padding()
         }
-        // Remove navigationBarTitle and navigationBarItems
-        // Alternatively, if you want a title, you can add a Text at the top
-        // Example:
-//        .overlay(
-//            Text("Settings")
-//                .font(.headline)
-//                .padding(),
-//            alignment: .top
-//        )
-        // Ensure the "Done" button is accessible
     }
     
     struct SettingsView_Previews: PreviewProvider {
@@ -315,4 +317,5 @@ struct SettingsView: View {
             SettingsView().environmentObject(WatchViewModel())
         }
     }
+    
 }

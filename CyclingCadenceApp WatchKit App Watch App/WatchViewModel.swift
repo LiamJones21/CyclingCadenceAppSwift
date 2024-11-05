@@ -9,6 +9,7 @@ import CoreMotion
 import CoreLocation
 import HealthKit
 import WatchConnectivity
+import SwiftUI
 
 // Import Protocols and Models
 // Ensure you import 'Protocols.swift' and 'Models.swift'
@@ -36,7 +37,7 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
     @Published var gearRatios: [String] = []
     @Published var wheelCircumference: Double = 2.1 // Default value in meters
     
-    // Settings Properties
+    // MARK: - Settings Properties
     @Published var useAccelerometer: Bool = false
     @Published var useGPS: Bool = true
 
@@ -51,7 +52,8 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
     // Kalman filter settings
     @Published var kalmanProcessNoise: Double = 0.1
     @Published var kalmanMeasurementNoise: Double = 0.1
-    @Published var gpsAccuracyThreshold: Double = 10.0
+    @Published var gpsAccuracyLowerBound: Double = 5.0
+    @Published var gpsAccuracyUpperBound: Double = 20.0
 
     // Managers
     private let healthKitManager = HealthKitManager()
@@ -72,8 +74,47 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
     override init() {
         dataCollector = DataCollector(speedCalculator: speedCalculator)
         super.init()
+        loadSettings()
         setup()
+        observeSettingsChanges()
     }
+    // MARK: - Settings Persistence
+
+        func loadSettings() {
+            let defaults = UserDefaults.standard
+            useAccelerometer = defaults.bool(forKey: "useAccelerometer")
+            useGPS = defaults.bool(forKey: "useGPS")
+
+            accelerometerTuningValue = defaults.double(forKey: "accelerometerTuningValue")
+            accelerometerWeightingX = defaults.double(forKey: "accelerometerWeightingX")
+            accelerometerWeightingY = defaults.double(forKey: "accelerometerWeightingY")
+            accelerometerWeightingZ = defaults.double(forKey: "accelerometerWeightingZ")
+            useLowPassFilter = defaults.bool(forKey: "useLowPassFilter")
+            lowPassFilterAlpha = defaults.double(forKey: "lowPassFilterAlpha")
+
+            kalmanProcessNoise = defaults.double(forKey: "kalmanProcessNoise")
+            kalmanMeasurementNoise = defaults.double(forKey: "kalmanMeasurementNoise")
+            gpsAccuracyLowerBound = defaults.double(forKey: "gpsAccuracyLowerBound")
+            gpsAccuracyUpperBound = defaults.double(forKey: "gpsAccuracyUpperBound")
+        }
+
+        func saveSettings() {
+            let defaults = UserDefaults.standard
+            defaults.set(useAccelerometer, forKey: "useAccelerometer")
+            defaults.set(useGPS, forKey: "useGPS")
+
+            defaults.set(accelerometerTuningValue, forKey: "accelerometerTuningValue")
+            defaults.set(accelerometerWeightingX, forKey: "accelerometerWeightingX")
+            defaults.set(accelerometerWeightingY, forKey: "accelerometerWeightingY")
+            defaults.set(accelerometerWeightingZ, forKey: "accelerometerWeightingZ")
+            defaults.set(useLowPassFilter, forKey: "useLowPassFilter")
+            defaults.set(lowPassFilterAlpha, forKey: "lowPassFilterAlpha")
+
+            defaults.set(kalmanProcessNoise, forKey: "kalmanProcessNoise")
+            defaults.set(kalmanMeasurementNoise, forKey: "kalmanMeasurementNoise")
+            defaults.set(gpsAccuracyLowerBound, forKey: "gpsAccuracyLowerBound")
+            defaults.set(gpsAccuracyUpperBound, forKey: "gpsAccuracyUpperBound")
+        }
 
     func setup() {
         healthKitManager.delegate = self
@@ -90,8 +131,115 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
 
         // Start sensors immediately to calculate speed all the time
         sensorManager.startSensors()
+        
     }
 
+    func applySettingsToSpeedCalculator() {
+            speedCalculator.useAccelerometer = useAccelerometer
+            speedCalculator.useGPS = useGPS
+            speedCalculator.accelerometerTuningValue = accelerometerTuningValue
+            speedCalculator.accelerometerWeightingX = accelerometerWeightingX
+            speedCalculator.accelerometerWeightingY = accelerometerWeightingY
+            speedCalculator.accelerometerWeightingZ = accelerometerWeightingZ
+            speedCalculator.useLowPassFilter = useLowPassFilter
+            speedCalculator.lowPassFilterAlpha = lowPassFilterAlpha
+            speedCalculator.kalmanProcessNoise = kalmanProcessNoise
+            speedCalculator.kalmanMeasurementNoise = kalmanMeasurementNoise
+            speedCalculator.gpsAccuracyLowerBound = gpsAccuracyLowerBound
+            speedCalculator.gpsAccuracyUpperBound = gpsAccuracyUpperBound
+        }
+
+        // Observe changes to settings and update SpeedCalculator
+        private var cancellables = Set<AnyCancellable>()
+    // MARK: - Observe Settings Changes
+
+        func observeSettingsChanges() {
+            $useAccelerometer
+                .sink { [weak self] _ in
+                    self?.applySettingsToSpeedCalculator()
+                    self?.saveSettings()
+                }
+                .store(in: &cancellables)
+
+            $useGPS
+                .sink { [weak self] _ in
+                    self?.applySettingsToSpeedCalculator()
+                    self?.saveSettings()
+                }
+                .store(in: &cancellables)
+
+            $accelerometerTuningValue
+                .sink { [weak self] _ in
+                    self?.applySettingsToSpeedCalculator()
+                    self?.saveSettings()
+                }
+                .store(in: &cancellables)
+
+            $accelerometerWeightingX
+                .sink { [weak self] _ in
+                    self?.applySettingsToSpeedCalculator()
+                    self?.saveSettings()
+                }
+                .store(in: &cancellables)
+
+            $accelerometerWeightingY
+                .sink { [weak self] _ in
+                    self?.applySettingsToSpeedCalculator()
+                    self?.saveSettings()
+                }
+                .store(in: &cancellables)
+
+            $accelerometerWeightingZ
+                .sink { [weak self] _ in
+                    self?.applySettingsToSpeedCalculator()
+                    self?.saveSettings()
+                }
+                .store(in: &cancellables)
+
+            $useLowPassFilter
+                .sink { [weak self] _ in
+                    self?.applySettingsToSpeedCalculator()
+                    self?.saveSettings()
+                }
+                .store(in: &cancellables)
+
+            $lowPassFilterAlpha
+                .sink { [weak self] _ in
+                    self?.applySettingsToSpeedCalculator()
+                    self?.saveSettings()
+                }
+                .store(in: &cancellables)
+
+            $kalmanProcessNoise
+                .sink { [weak self] _ in
+                    self?.applySettingsToSpeedCalculator()
+                    self?.saveSettings()
+                }
+                .store(in: &cancellables)
+
+            $kalmanMeasurementNoise
+                .sink { [weak self] _ in
+                    self?.applySettingsToSpeedCalculator()
+                    self?.saveSettings()
+                }
+                .store(in: &cancellables)
+
+            $gpsAccuracyLowerBound
+                .sink { [weak self] _ in
+                    self?.applySettingsToSpeedCalculator()
+                    self?.saveSettings()
+                }
+                .store(in: &cancellables)
+
+            $gpsAccuracyUpperBound
+                .sink { [weak self] _ in
+                    self?.applySettingsToSpeedCalculator()
+                    self?.saveSettings()
+                }
+                .store(in: &cancellables)
+        }
+    
+    
     // MARK: - Recording Control Methods
 
     func startRecording(synchronized: Bool = true) {
