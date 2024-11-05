@@ -39,14 +39,27 @@ struct SettingsView: View {
                             .font(.headline)
                             .padding(.horizontal)
                         
-                        // Tuning Value
+                        // Tuning Value with increment buttons and manual input
                         HStack {
                             Text("Tuning Value:")
                             Spacer()
                             Button(action: {
+                                viewModel.accelerometerTuningValue -= 0.1
+                            }) {
+                                Image(systemName: "minus.circle")
+                                    .foregroundColor(.blue)
+                            }
+                            Button(action: {
                                 showTuningValueInput = true
                             }) {
                                 Text(String(format: "%.1f", viewModel.accelerometerTuningValue))
+                                    .foregroundColor(.blue)
+                                    .underline()
+                            }
+                            Button(action: {
+                                viewModel.accelerometerTuningValue += 0.1
+                            }) {
+                                Image(systemName: "plus.circle")
                                     .foregroundColor(.blue)
                             }
                         }
@@ -56,37 +69,79 @@ struct SettingsView: View {
                         Text("Direction Weightings:")
                             .padding(.horizontal)
                         
+                        // Weighting X with increment buttons and manual input
                         HStack {
                             Text("X:")
                             Spacer()
+                            Button(action: {
+                                viewModel.accelerometerWeightingX -= 0.1
+                            }) {
+                                Image(systemName: "minus.circle")
+                                    .foregroundColor(.blue)
+                            }
                             Button(action: {
                                 showWeightingXInput = true
                             }) {
                                 Text(String(format: "%.1f", viewModel.accelerometerWeightingX))
                                     .foregroundColor(.blue)
+                                    .underline()
                             }
-                        }
-                        .padding(.horizontal)
-                        
-                        HStack {
-                            Text("Y:")
-                            Spacer()
                             Button(action: {
-                                showWeightingYInput = true
+                                viewModel.accelerometerWeightingX += 0.1
                             }) {
-                                Text(String(format: "%.1f", viewModel.accelerometerWeightingY))
+                                Image(systemName: "plus.circle")
                                     .foregroundColor(.blue)
                             }
                         }
                         .padding(.horizontal)
                         
+                        // Weighting Y with increment buttons and manual input
+                        HStack {
+                            Text("Y:")
+                            Spacer()
+                            Button(action: {
+                                viewModel.accelerometerWeightingY -= 0.1
+                            }) {
+                                Image(systemName: "minus.circle")
+                                    .foregroundColor(.blue)
+                            }
+                            Button(action: {
+                                showWeightingYInput = true
+                            }) {
+                                Text(String(format: "%.1f", viewModel.accelerometerWeightingY))
+                                    .foregroundColor(.blue)
+                                    .underline()
+                            }
+                            Button(action: {
+                                viewModel.accelerometerWeightingY += 0.1
+                            }) {
+                                Image(systemName: "plus.circle")
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                        .padding(.horizontal)
+                        
+                        // Weighting Z with increment buttons and manual input
                         HStack {
                             Text("Z:")
                             Spacer()
                             Button(action: {
+                                viewModel.accelerometerWeightingZ -= 0.1
+                            }) {
+                                Image(systemName: "minus.circle")
+                                    .foregroundColor(.blue)
+                            }
+                            Button(action: {
                                 showWeightingZInput = true
                             }) {
                                 Text(String(format: "%.1f", viewModel.accelerometerWeightingZ))
+                                    .foregroundColor(.blue)
+                                    .underline()
+                            }
+                            Button(action: {
+                                viewModel.accelerometerWeightingZ += 0.1
+                            }) {
+                                Image(systemName: "plus.circle")
                                     .foregroundColor(.blue)
                             }
                         }
@@ -98,14 +153,27 @@ struct SettingsView: View {
                             .padding(.horizontal)
                         
                         if viewModel.useLowPassFilter {
-                            // Low-Pass Filter Alpha
+                            // Low-Pass Filter Alpha with increment buttons and manual input
                             HStack {
                                 Text("Filter Alpha:")
                                 Spacer()
                                 Button(action: {
+                                    viewModel.lowPassFilterAlpha -= 0.01
+                                }) {
+                                    Image(systemName: "minus.circle")
+                                        .foregroundColor(.blue)
+                                }
+                                Button(action: {
                                     showFilterAlphaInput = true
                                 }) {
                                     Text(String(format: "%.2f", viewModel.lowPassFilterAlpha))
+                                        .foregroundColor(.blue)
+                                        .underline()
+                                }
+                                Button(action: {
+                                    viewModel.lowPassFilterAlpha += 0.01
+                                }) {
+                                    Image(systemName: "plus.circle")
                                         .foregroundColor(.blue)
                                 }
                             }
@@ -134,40 +202,79 @@ struct SettingsView: View {
                             .font(.headline)
                             .padding(.horizontal)
                         
-                        // Process Noise Q
+                        // Process Noise Q with increment buttons and manual input
                         HStack {
                             Text("Process Noise Q:")
                             Spacer()
+                            Button(action: {
+                                viewModel.kalmanProcessNoise -= 0.1
+                            }) {
+                                Image(systemName: "minus.circle")
+                                    .foregroundColor(.blue)
+                            }
                             Button(action: {
                                 showProcessNoiseInput = true
                             }) {
                                 Text(String(format: "%.1f", viewModel.kalmanProcessNoise))
                                     .foregroundColor(.blue)
+                                    .underline()
                             }
-                        }
-                        .padding(.horizontal)
-                        
-                        // Measurement Noise R
-                        HStack {
-                            Text("Measurement Noise R:")
-                            Spacer()
                             Button(action: {
-                                showMeasurementNoiseInput = true
+                                viewModel.kalmanProcessNoise += 0.1
                             }) {
-                                Text(String(format: "%.1f", viewModel.kalmanMeasurementNoise))
+                                Image(systemName: "plus.circle")
                                     .foregroundColor(.blue)
                             }
                         }
                         .padding(.horizontal)
                         
-                        // GPS Accuracy Threshold
+                        // Measurement Noise R with increment buttons and manual input
+                        HStack {
+                            Text("Measurement Noise R:")
+                            Spacer()
+                            Button(action: {
+                                viewModel.kalmanMeasurementNoise -= 0.1
+                            }) {
+                                Image(systemName: "minus.circle")
+                                    .foregroundColor(.blue)
+                            }
+                            Button(action: {
+                                showMeasurementNoiseInput = true
+                            }) {
+                                Text(String(format: "%.1f", viewModel.kalmanMeasurementNoise))
+                                    .foregroundColor(.blue)
+                                    .underline()
+                            }
+                            Button(action: {
+                                viewModel.kalmanMeasurementNoise += 0.1
+                            }) {
+                                Image(systemName: "plus.circle")
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                        .padding(.horizontal)
+                        
+                        // GPS Accuracy Threshold with increment buttons and manual input
                         HStack {
                             Text("GPS Accuracy Threshold:")
                             Spacer()
                             Button(action: {
+                                viewModel.gpsAccuracyThreshold -= 1.0
+                            }) {
+                                Image(systemName: "minus.circle")
+                                    .foregroundColor(.blue)
+                            }
+                            Button(action: {
                                 showGPSAccuracyThresholdInput = true
                             }) {
                                 Text(String(format: "%.0f m", viewModel.gpsAccuracyThreshold))
+                                    .foregroundColor(.blue)
+                                    .underline()
+                            }
+                            Button(action: {
+                                viewModel.gpsAccuracyThreshold += 1.0
+                            }) {
+                                Image(systemName: "plus.circle")
                                     .foregroundColor(.blue)
                             }
                         }
