@@ -5,12 +5,13 @@
 //  Created by Jones, Liam on 20/10/2024.
 
 import Foundation
+import SwiftUI
 import CoreMotion
 import CoreLocation
 import WatchConnectivity
 import Combine
-import SwiftUI
 import CreateML
+import CoreML
 
 // MARK: - Activity Log Entry
 struct ActivityLogEntry: Identifiable, Codable {
@@ -81,8 +82,9 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
     @Published var isRecording: Bool = false
     @Published var latestSession: Session?
     @Published var isWatchConnected: Bool = false
-    @Published var activityLog: [ActivityLogEntry] = [] // Activity log
+    @Published var activityLog: [ActivityLogEntry] = []
     @Published var recordingStateLastChanged: Date = Date()
+
     
 
     // MARK: - Properties
@@ -164,119 +166,106 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
         }
     }
     // MARK: - Model Loading
-        func loadModels() {
-            // Load models from local storage or server
-            // For simplicity, we will create dummy models
-            models = [
-                ModelConfig(name: "Model A", config: ModelConfig.Config(windowSize: 100, windowStep: 50, includeFFT: true, includeWavelet: false)),
-                ModelConfig(name: "Model B", config: ModelConfig.Config(windowSize: 200, windowStep: 100, includeFFT: false, includeWavelet: true)),
-                // Add more models as needed
-            ]
-        }
-    
-    // MARK: - Model Training
-//    func trainModel(windowSize: Int, windowStep: Int, includeFFT: Bool, includeWavelet: Bool, modelType: String, maxTrainingTime: TimeInterval, completion: @escaping (Double?) -> Void) {
-//        DispatchQueue.global(qos: .userInitiated).async {
-//            // Load collected data
-//            guard let data = self.loadTrainingData() else {
-//                DispatchQueue.main.async {
-//                    completion(nil)
-//                }
-//                return
-//            }
-//
-//            // Preprocess data
-//            let features = self.preprocessData(data: data, windowSize: windowSize, windowStep: windowStep, includeFFT: includeFFT, includeWavelet: includeWavelet)
-//
-//            // Create MLDataTable
-//            guard let dataTable = try? MLDataTable(dictionary: features) else {
-//                DispatchQueue.main.async {
-//                    completion(nil)
-//                }
-//                return
-//            }
-//
-//            // Split data
-//            let (trainingData, testingData) = dataTable.randomSplit(by: 0.8, seed: 42)
-//
-//            // Set up training configuration
-//            let configuration = MLModelConfiguration()
-//            configuration.computeUnits = .cpuOnly
-//
-//            let startTime = Date()
-//            var model: MLRegressor?
-//
-//            // Train model based on type
-//            switch modelType {
-//            case "Decision Tree":
-//                let parameters = MLDecisionTreeRegressor.ModelParameters()
-//                // Configure parameters if needed
-//                model = try? MLDecisionTreeRegressor(trainingData: trainingData, targetColumn: "cadence", parameters: parameters, configuration: configuration)
-//            case "Random Forest":
-//                let parameters = MLRandomForestRegressor.ModelParameters()
-//                // Configure parameters if needed
-//                model = try? MLRandomForestRegressor(trainingData: trainingData, targetColumn: "cadence", parameters: parameters, configuration: configuration)
-//            case "Linear Regression":
-//                model = try? MLLinearRegressor(trainingData: trainingData, targetColumn: "cadence", configuration: configuration)
-//            default:
-//                print("Unsupported model type: \(modelType)")
-//            }
-//
-//            // Check training duration
-//            let trainingDuration = Date().timeIntervalSince(startTime)
-//            if trainingDuration > maxTrainingTime {
-//                DispatchQueue.main.async {
-//                    print("Training exceeded maximum duration.")
-//                    completion(nil)
-//                }
-//                return
-//            }
-//
-//            // Evaluate model
-//            if let model = model {
-//                let evaluationMetrics = model.evaluation(on: testingData)
-//                let error = evaluationMetrics.metrics[.rootMeanSquaredError] as? Double ?? 0.0
-//
-//                print("Training Error (RMSE): \(error)")
-//
-//                // Save model
-//                let modelName = "CustomModel_\(Date().timeIntervalSince1970)"
-//                let saveURL = self.getDocumentsDirectory().appendingPathComponent("\(modelName).mlmodel")
-//                do {
-//                    try model.write(to: saveURL)
-//                } catch {
-//                    print("Error saving model: \(error.localizedDescription)")
-//                    DispatchQueue.main.async {
-//                        completion(nil)
-//                    }
-//                    return
-//                }
-//
-//                // Save model config as JSON
-//                let configURL = self.getDocumentsDirectory().appendingPathComponent("\(modelName).json")
-//                do {
-//                    let encoder = JSONEncoder()
-//                    let configData = try encoder.encode(ModelConfig.Config(windowSize: windowSize, windowStep: windowStep, includeFFT: includeFFT, includeWavelet: includeWavelet))
-//                    try configData.write(to: configURL)
-//                } catch {
-//                    print("Error saving model config: \(error.localizedDescription)")
-//                }
-//
-//                // Update models list
-//                let config = ModelConfig.Config(windowSize: windowSize, windowStep: windowStep, includeFFT: includeFFT, includeWavelet: includeWavelet)
-//                let newModel = ModelConfig(name: modelName, config: config)
-//                DispatchQueue.main.async {
-//                    self.models.append(newModel)
-//                    completion(error)
-//                }
-//            } else {
-//                DispatchQueue.main.async {
-//                    print("Model training is not available on this device.")
-//                    completion(nil)
-//                }
-//            }
+//        func loadModels() {
+//            // Load models from local storage or server
+//            // For simplicity, we will create dummy models
+//            models = [
+////                ModelConfig(name: "Model A", config: ModelConfig.Config(windowSize: 100, windowStep: 50, includeFFT: true, includeWavelet: false)),
+////                ModelConfig(name: "Model B", config: ModelConfig.Config(windowSize: 200, windowStep: 100, includeFFT: false, includeWavelet: true)),
+//                // Add more models as needed
+//            ]
 //        }
-//    }
+    
+    // MARK: - Model Loading
+        func loadModels() {
+            // Load models from local storage
+            let fileManager = FileManager.default
+            let documentsURL = getDocumentsDirectory()
+            do {
+                let fileURLs = try fileManager.contentsOfDirectory(at: documentsURL, includingPropertiesForKeys: nil)
+                for url in fileURLs {
+                    if url.pathExtension == "mlmodel" {
+                        let modelName = url.deletingPathExtension().lastPathComponent
+                        let configURL = url.deletingPathExtension().appendingPathExtension("json")
+                        if fileManager.fileExists(atPath: configURL.path) {
+                            do {
+                                let configData = try Data(contentsOf: configURL)
+                                let decoder = JSONDecoder()
+                                let config = try decoder.decode(ModelConfig.Config.self, from: configData)
+                                let modelConfig = ModelConfig(name: modelName, config: config)
+                                models.append(modelConfig)
+                            } catch {
+                                print("Error loading model config: \(error.localizedDescription)")
+                            }
+                        }
+                    }
+                }
+            } catch {
+                print("Error loading models: \(error.localizedDescription)")
+            }
+        }
+
+        // MARK: - Model Training and Prediction
+    func loadSelectedModel() -> MLRegressor? {
+            guard let index = selectedModelIndex else { return nil }
+            let modelInfo = models[index]
+            let modelURL = getDocumentsDirectory().appendingPathComponent("\(modelInfo.name).mlmodelc")
+            guard let model = try? MLRegressor(contentsOf: modelURL) else { return nil }
+            return model
+        }
+
+        func predictOverData(session: Session, model: MLRegressor, modelConfig: ModelConfig.Config) -> [PredictionResult] {
+            var predictionResults: [PredictionResult] = []
+
+            let data = session.data
+            let windowSize = modelConfig.windowSize
+            let windowStep = modelConfig.windowStep
+            let totalWindows = (data.count - windowSize) / windowStep + 1
+
+            for windowIndex in 0..<totalWindows {
+                let start = windowIndex * windowStep
+                let end = start + windowSize
+                let window = Array(data[start..<end])
+
+                let preprocessor = DataPreprocessor(
+                    data: window,
+                    windowSize: windowSize,
+                    windowStep: windowStep,
+                    preprocessingType: modelConfig.preprocessingType,
+                    filtering: modelConfig.filtering,
+                    scaler: modelConfig.scaler,
+                    usePCA: modelConfig.usePCA,
+                    includeAcceleration: modelConfig.includeAcceleration,
+                    includeRotationRate: modelConfig.includeRotationRate
+                )
+
+                let featureVector = preprocessor.extractFeatures()
+                guard let inputArray = try? MLMultiArray(featureVector) else {
+                    continue
+                }
+                let inputDict = ["features": inputArray]
+                guard let inputProvider = try? MLDictionaryFeatureProvider(dictionary: inputDict) else {
+                    continue
+                }
+
+                if let prediction = try? model.prediction(from: inputProvider),
+                   let predictedCadenceValue = prediction.featureValue(for: "target")?.doubleValue {
+                    let timestamp = window.last?.timestamp ?? Date()
+                    let actualData = window.last!
+
+                    let predictionResult = PredictionResult(
+                        timestamp: timestamp,
+                        cadence: predictedCadenceValue,
+                        gear: actualData.gear,
+                        terrain: actualData.terrain,
+                        isStanding: actualData.isStanding,
+                        speed: actualData.speed
+                    )
+                    predictionResults.append(predictionResult)
+                }
+            }
+            return predictionResults
+        }
 
 
         func loadTrainingData() -> [CyclingData]? {

@@ -46,6 +46,20 @@
 			remoteGlobalIDString = E14D04242CC5986600E22AFB;
 			remoteInfo = "CyclingCadenceApp WatchKit App Watch App";
 		};
+		E1D458D92CDBFBEB0020FDD7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E14D03EC2CC5980100E22AFB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1D458C52CDBFBE70020FDD7;
+			remoteInfo = CyclingTrainer;
+		};
+		E1D458E32CDBFBEB0020FDD7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E14D03EC2CC5980100E22AFB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E1D458C52CDBFBE70020FDD7;
+			remoteInfo = CyclingTrainer;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -69,9 +83,19 @@
 		E14D04252CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "CyclingCadenceApp WatchKit App Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E14D04342CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CyclingCadenceApp WatchKit App Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E14D043E2CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "CyclingCadenceApp WatchKit App Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1D458C62CDBFBE70020FDD7 /* CyclingTrainer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CyclingTrainer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1D458D82CDBFBEB0020FDD7 /* CyclingTrainerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CyclingTrainerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E1D458E22CDBFBEB0020FDD7 /* CyclingTrainerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CyclingTrainerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E1D459062CDBFD750020FDD7 /* Exceptions for "CyclingTrainer" folder in "CyclingTrainer" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E1D458C52CDBFBE70020FDD7 /* CyclingTrainer */;
+		};
 		E1F1A84D2CC6E8A9000E493E /* Exceptions for "CyclingCadenceApp" folder in "CyclingCadenceApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -113,6 +137,24 @@
 		E14D04412CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "CyclingCadenceApp WatchKit App Watch AppUITests";
+			sourceTree = "<group>";
+		};
+		E1D458C72CDBFBE80020FDD7 /* CyclingTrainer */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E1D459062CDBFD750020FDD7 /* Exceptions for "CyclingTrainer" folder in "CyclingTrainer" target */,
+			);
+			path = CyclingTrainer;
+			sourceTree = "<group>";
+		};
+		E1D458DB2CDBFBEB0020FDD7 /* CyclingTrainerTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CyclingTrainerTests;
+			sourceTree = "<group>";
+		};
+		E1D458E52CDBFBEB0020FDD7 /* CyclingTrainerUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CyclingTrainerUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -160,6 +202,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E1D458C32CDBFBE70020FDD7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1D458D52CDBFBEB0020FDD7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1D458DF2CDBFBEB0020FDD7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -172,6 +235,9 @@
 				E14D04262CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App */,
 				E14D04372CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppTests */,
 				E14D04412CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppUITests */,
+				E1D458C72CDBFBE80020FDD7 /* CyclingTrainer */,
+				E1D458DB2CDBFBEB0020FDD7 /* CyclingTrainerTests */,
+				E1D458E52CDBFBEB0020FDD7 /* CyclingTrainerUITests */,
 				E14D03F52CC5980100E22AFB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -185,6 +251,9 @@
 				E14D04252CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App.app */,
 				E14D04342CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppTests.xctest */,
 				E14D043E2CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppUITests.xctest */,
+				E1D458C62CDBFBE70020FDD7 /* CyclingTrainer.app */,
+				E1D458D82CDBFBEB0020FDD7 /* CyclingTrainerTests.xctest */,
+				E1D458E22CDBFBEB0020FDD7 /* CyclingTrainerUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -330,6 +399,74 @@
 			productReference = E14D043E2CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		E1D458C52CDBFBE70020FDD7 /* CyclingTrainer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E1D458EA2CDBFBEB0020FDD7 /* Build configuration list for PBXNativeTarget "CyclingTrainer" */;
+			buildPhases = (
+				E1D458C22CDBFBE70020FDD7 /* Sources */,
+				E1D458C32CDBFBE70020FDD7 /* Frameworks */,
+				E1D458C42CDBFBE70020FDD7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				E1D458C72CDBFBE80020FDD7 /* CyclingTrainer */,
+			);
+			name = CyclingTrainer;
+			packageProductDependencies = (
+			);
+			productName = CyclingTrainer;
+			productReference = E1D458C62CDBFBE70020FDD7 /* CyclingTrainer.app */;
+			productType = "com.apple.product-type.application";
+		};
+		E1D458D72CDBFBEB0020FDD7 /* CyclingTrainerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E1D458ED2CDBFBEB0020FDD7 /* Build configuration list for PBXNativeTarget "CyclingTrainerTests" */;
+			buildPhases = (
+				E1D458D42CDBFBEB0020FDD7 /* Sources */,
+				E1D458D52CDBFBEB0020FDD7 /* Frameworks */,
+				E1D458D62CDBFBEB0020FDD7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E1D458DA2CDBFBEB0020FDD7 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E1D458DB2CDBFBEB0020FDD7 /* CyclingTrainerTests */,
+			);
+			name = CyclingTrainerTests;
+			packageProductDependencies = (
+			);
+			productName = CyclingTrainerTests;
+			productReference = E1D458D82CDBFBEB0020FDD7 /* CyclingTrainerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		E1D458E12CDBFBEB0020FDD7 /* CyclingTrainerUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E1D458F02CDBFBEB0020FDD7 /* Build configuration list for PBXNativeTarget "CyclingTrainerUITests" */;
+			buildPhases = (
+				E1D458DE2CDBFBEB0020FDD7 /* Sources */,
+				E1D458DF2CDBFBEB0020FDD7 /* Frameworks */,
+				E1D458E02CDBFBEB0020FDD7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E1D458E42CDBFBEB0020FDD7 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				E1D458E52CDBFBEB0020FDD7 /* CyclingTrainerUITests */,
+			);
+			name = CyclingTrainerUITests;
+			packageProductDependencies = (
+			);
+			productName = CyclingTrainerUITests;
+			productReference = E1D458E22CDBFBEB0020FDD7 /* CyclingTrainerUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -337,7 +474,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1600;
+				LastSwiftUpdateCheck = 1610;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					E14D03F32CC5980100E22AFB = {
@@ -362,6 +499,17 @@
 						CreatedOnToolsVersion = 16.0;
 						TestTargetID = E14D04242CC5986600E22AFB;
 					};
+					E1D458C52CDBFBE70020FDD7 = {
+						CreatedOnToolsVersion = 16.1;
+					};
+					E1D458D72CDBFBEB0020FDD7 = {
+						CreatedOnToolsVersion = 16.1;
+						TestTargetID = E1D458C52CDBFBE70020FDD7;
+					};
+					E1D458E12CDBFBEB0020FDD7 = {
+						CreatedOnToolsVersion = 16.1;
+						TestTargetID = E1D458C52CDBFBE70020FDD7;
+					};
 				};
 			};
 			buildConfigurationList = E14D03EF2CC5980100E22AFB /* Build configuration list for PBXProject "CyclingCadenceApp" */;
@@ -384,6 +532,9 @@
 				E14D04242CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App */,
 				E14D04332CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppTests */,
 				E14D043D2CC5986900E22AFB /* CyclingCadenceApp WatchKit App Watch AppUITests */,
+				E1D458C52CDBFBE70020FDD7 /* CyclingTrainer */,
+				E1D458D72CDBFBEB0020FDD7 /* CyclingTrainerTests */,
+				E1D458E12CDBFBEB0020FDD7 /* CyclingTrainerUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -425,6 +576,27 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		E14D043C2CC5986900E22AFB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1D458C42CDBFBE70020FDD7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1D458D62CDBFBEB0020FDD7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1D458E02CDBFBEB0020FDD7 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -476,6 +648,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E1D458C22CDBFBE70020FDD7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1D458D42CDBFBEB0020FDD7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1D458DE2CDBFBEB0020FDD7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -503,6 +696,16 @@
 			isa = PBXTargetDependency;
 			target = E14D04242CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App */;
 			targetProxy = E14D04462CC5986A00E22AFB /* PBXContainerItemProxy */;
+		};
+		E1D458DA2CDBFBEB0020FDD7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1D458C52CDBFBE70020FDD7 /* CyclingTrainer */;
+			targetProxy = E1D458D92CDBFBEB0020FDD7 /* PBXContainerItemProxy */;
+		};
+		E1D458E42CDBFBEB0020FDD7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E1D458C52CDBFBE70020FDD7 /* CyclingTrainer */;
+			targetProxy = E1D458E32CDBFBEB0020FDD7 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -639,6 +842,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CyclingCadenceApp/Info.plist;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app requires location access to track your cycling activity and provide speed information.";
+				INFOPLIST_KEY_NSNetworkVolumesUsageDescription = "$(MARKETING_VERSION)";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -670,6 +874,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CyclingCadenceApp/Info.plist;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app requires location access to track your cycling activity and provide speed information.";
+				INFOPLIST_KEY_NSNetworkVolumesUsageDescription = "$(MARKETING_VERSION)";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -908,6 +1113,140 @@
 			};
 			name = Release;
 		};
+		E1D458EB2CDBFBEB0020FDD7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CyclingTrainer/CyclingTrainer.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"CyclingTrainer/Preview Content\"";
+				DEVELOPMENT_TEAM = 74B93L37DH;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CyclingTrainer/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoT.CyclingTrainer;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E1D458EC2CDBFBEB0020FDD7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CyclingTrainer/CyclingTrainer.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"CyclingTrainer/Preview Content\"";
+				DEVELOPMENT_TEAM = 74B93L37DH;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CyclingTrainer/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoT.CyclingTrainer;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		E1D458EE2CDBFBEB0020FDD7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74B93L37DH;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoT.CyclingTrainerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CyclingTrainer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CyclingTrainer";
+			};
+			name = Debug;
+		};
+		E1D458EF2CDBFBEB0020FDD7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74B93L37DH;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoT.CyclingTrainerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CyclingTrainer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CyclingTrainer";
+			};
+			name = Release;
+		};
+		E1D458F12CDBFBEB0020FDD7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74B93L37DH;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoT.CyclingTrainerUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = CyclingTrainer;
+			};
+			name = Debug;
+		};
+		E1D458F22CDBFBEB0020FDD7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74B93L37DH;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoT.CyclingTrainerUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = CyclingTrainer;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -970,6 +1309,33 @@
 			buildConfigurations = (
 				E14D04512CC5986A00E22AFB /* Debug */,
 				E14D04522CC5986A00E22AFB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E1D458EA2CDBFBEB0020FDD7 /* Build configuration list for PBXNativeTarget "CyclingTrainer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1D458EB2CDBFBEB0020FDD7 /* Debug */,
+				E1D458EC2CDBFBEB0020FDD7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E1D458ED2CDBFBEB0020FDD7 /* Build configuration list for PBXNativeTarget "CyclingTrainerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1D458EE2CDBFBEB0020FDD7 /* Debug */,
+				E1D458EF2CDBFBEB0020FDD7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E1D458F02CDBFBEB0020FDD7 /* Build configuration list for PBXNativeTarget "CyclingTrainerUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1D458F12CDBFBEB0020FDD7 /* Debug */,
+				E1D458F22CDBFBEB0020FDD7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

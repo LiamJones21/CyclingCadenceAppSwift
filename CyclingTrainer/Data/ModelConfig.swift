@@ -2,11 +2,9 @@
 //  ModelConfig.swift
 //  CyclingCadenceApp
 //
-//  Created by Jones, Liam on 10/31/24.
+//  Created by Jones, Liam on 11/6/24.
 //
 
-
-// ModelConfig.swift
 
 import Foundation
 

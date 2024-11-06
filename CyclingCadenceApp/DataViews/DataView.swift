@@ -13,7 +13,7 @@ struct DataView: View {
     @State private var exportFileURL: FileExportItem?
     @State private var selectedSessionsToExport = [Session]()
     @State private var exportFormat: ExportFormat = .json
-    
+
     enum ExportFormat: String, CaseIterable, Identifiable {
         case json = "JSON"
         case csv = "CSV"
@@ -25,14 +25,26 @@ struct DataView: View {
         NavigationStack {
             List {
                 ForEach(viewModel.sessions) { session in
-                    NavigationLink(destination: SessionDetailView(session: session)) {
-                        HStack {
-                            Text(session.name ?? session.dateFormatted)
-                                .font(.headline)
-                            Spacer()
-                            Text("\(session.data.count) data points")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
+                    HStack {
+                        NavigationLink(destination: SessionDetailView(session: session)) {
+                            HStack {
+                                Text(session.name ?? session.dateFormatted)
+                                    .font(.headline)
+                                Spacer()
+                                Text("\(session.data.count) data points")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                        Spacer()
+                        Button(action: {
+                            // Navigate to ModelTrainingView with selected session
+                            let trainingViewModel = ModelTrainingViewModel(sessions: viewModel.sessions)
+                            trainingViewModel.selectedSessions.insert(session.id)
+                            let trainingView = ModelTrainingView(viewModel: trainingViewModel)
+                            // Present the training view
+                        }) {
+                            Text("Train")
                         }
                     }
                 }
