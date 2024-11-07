@@ -42,7 +42,7 @@ struct ContentView: View {
                                                 Text("Prediction")
                                             }
                     // Settings Tab
-                    SettingsView(viewModel: viewModel)
+                    SettingsView(viewModel: viewModel, modelTrainingViewModel: ModelTrainingViewModel(cyclingViewModel: CyclingViewModel()))
                         .tabItem {
                             Image(systemName: "gearshape")
                             Text("Settings")

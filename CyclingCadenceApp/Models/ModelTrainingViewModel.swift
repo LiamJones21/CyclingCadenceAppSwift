@@ -23,6 +23,21 @@ class ModelTrainingViewModel: NSObject, ObservableObject, MCSessionDelegate, MCN
     @Published var bestAccuracy: Double?
     @Published var connectedPeers: [MCPeerID] = []
     
+    @Published var trainingSettings = TrainingSettings(
+            windowSizes: [],
+            windowSteps: [],
+            modelTypes: [],
+            preprocessingTypes: [],
+            filteringOptions: [],
+            scalerOptions: [],
+            usePCA: false,
+            includeAcceleration: true,
+            includeRotationRate: true,
+            isAutomatic: false,
+            maxTrainingTime: 300,
+            selectedSessionIDs: []
+        )
+    
     private var cancellables = Set<AnyCancellable>()
     
     // **Add cyclingViewModel as a property**
@@ -49,6 +64,13 @@ class ModelTrainingViewModel: NSObject, ObservableObject, MCSessionDelegate, MCN
             }
             .store(in: &cancellables)
         
+        $trainingSettings
+                    .removeDuplicates()  // Avoid sending updates if the values haven't actually changed
+                    .sink { [weak self] updatedSettings in
+                        self?.sendUpdatedSettingsToMac(updatedSettings)
+                    }
+                    .store(in: &cancellables)
+        
         session = MCSession(peer: myPeerID, securityIdentity: nil, encryptionPreference: .required)
         session.delegate = self
         browser = MCNearbyServiceBrowser(peer: myPeerID, serviceType: serviceType)
@@ -62,6 +84,26 @@ class ModelTrainingViewModel: NSObject, ObservableObject, MCSessionDelegate, MCN
         browser.stopBrowsingForPeers()
         session.disconnect()
     }
+    private func sendUpdatedSettingsToMac(_ settings: TrainingSettings) {
+            let parameters: [String: Any] = [
+                "windowSizes": settings.windowSizes.map { Int($0 * 50) },
+                "windowSteps": settings.windowSteps.map { Int($0 * 50) },
+                "modelTypes": Array(settings.modelTypes),
+                "preprocessingTypes": Array(settings.preprocessingTypes),
+                "filteringOptions": Array(settings.filteringOptions),
+                "scalerOptions": Array(settings.scalerOptions),
+                "usePCA": settings.usePCA,
+                "includeAcceleration": settings.includeAcceleration,
+                "includeRotationRate": settings.includeRotationRate,
+                "isAutomatic": settings.isAutomatic,
+                "maxTrainingTime": settings.maxTrainingTime,
+                "selectedSessionIDs": settings.selectedSessionIDs.map { $0.uuidString }
+            ]
+            
+            if let peerID = connectedPeers.first {
+                sendMessage(message: parameters, to: peerID)
+            }
+        }
 
     // Load sessions from CyclingViewModel
     func loadSessions() {
@@ -132,6 +174,14 @@ class ModelTrainingViewModel: NSObject, ObservableObject, MCSessionDelegate, MCN
             default:
                 break
             }
+        }
+    }
+    // ModelTrainingViewModel.swift (iPhone Version)
+
+    func requestModel(modelName: String) {
+        if let peerID = connectedPeers.first {
+            let message: [String: Any] = ["type": "requestModel", "modelName": modelName]
+            sendMessage(message: message, to: peerID)
         }
     }
     

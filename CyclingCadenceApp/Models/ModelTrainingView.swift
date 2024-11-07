@@ -32,10 +32,9 @@ struct ModelTrainingView: View {
     @State private var showSessionSelector = false
     @State private var selectedSessionIDs: [UUID] = []
     @State private var isConnectedToMac = false
+    @State private var isKeyboardVisible = false
     
-    var sessions: [Session] {
-        viewModel.sessions
-    }
+    let sessions: [Session]
     
     let modelTypes = ["LightGBM", "RandomForest", "XGBoost", "MLP", "LSTM"]
     let preprocessingTypes = ["Normalization", "Standardization"]
@@ -45,12 +44,18 @@ struct ModelTrainingView: View {
     init(cyclingViewModel: CyclingViewModel, viewModel: ModelTrainingViewModel, selectedSessionIDs: [UUID]) {
             self.cyclingViewModel = cyclingViewModel
             self.viewModel = viewModel
-            self._selectedSessionsToTrain = State(initialValue: selectedSessionIDs.compactMap { id in
-                viewModel.sessions.first { $0.id == id }
-            })
-        self.selectedSessionsToTrain = .init(selectedSessionIDs.compactMap { id in
+//            self._selectedSessionsToTrain = State(initialValue: selectedSessionIDs.compactMap { id in
+//                viewModel.sessions.first { $0.id == id }
+//            })
+//        self.selectedSessionsToTrain = .init(selectedSessionIDs.compactMap { id in
+//            viewModel.sessions.first { $0.id == id }
+//        })
+        self.selectedSessionsToTrain = selectedSessionIDs.compactMap { id in
             viewModel.sessions.first { $0.id == id }
-        })
+        }
+        self.sessions = viewModel.sessions
+//        print("These are the selected items bright over\(selectedSessionsToTrain.map(\.id))")
+//        print("These are the sessions\(sessions)")
     }
 
     var body: some View {
@@ -144,6 +149,7 @@ struct ModelTrainingView: View {
                 }
             }
             .navigationTitle("Train New Model")
+            
         }
         .onAppear {
             // Initialize `selectedSessionsToTrain` based on `selectedSessionIDs`
@@ -158,8 +164,31 @@ struct ModelTrainingView: View {
             isConnectedToMac = !peers.isEmpty
         }
         .onTapGesture {
-                    dismissKeyboard() // Dismiss the keyboard when tapping outside of a text field
-                }
+            if isKeyboardVisible{
+                dismissKeyboard() // Dismiss the keyboard when tapping outside of a text field
+            }
+        }
+    }
+    func sendUpdatedSettingsToMac() {
+        guard isConnectedToMac else { return }
+        let parameters: [String: Any] = [
+            "windowSizes": selectedWindowSizes.map { Int($0 * 50) },
+            "windowSteps": selectedWindowSteps.map { Int($0 * 50) },
+            "modelTypes": Array(selectedModelTypes),
+            "preprocessingTypes": Array(selectedPreprocessingTypes),
+            "filteringOptions": Array(selectedFilteringOptions),
+            "scalerOptions": Array(selectedScalers),
+            "usePCA": usePCA,
+            "includeAcceleration": includeAcceleration,
+            "includeRotationRate": includeRotationRate,
+            "isAutomatic": selectedTrainingMode == "Automatic Training",
+            "maxTrainingTime": maxTrainingTime,
+            "selectedSessionIDs": selectedSessionsToTrain.map { $0.id.uuidString }
+        ]
+        if let peerID = viewModel.connectedPeers.first {
+            let message: [String: Any] = ["type": "trainingSettingsUpdate", "parameters": parameters]
+            viewModel.sendMessage(message: message, to: peerID)
+        }
     }
     
     func trainmodel() {
@@ -364,6 +393,7 @@ struct MultipleSelectionRow: View {
                         .font(.body)
                         .padding(.vertical, 8)
                     Spacer()
+                    
                     if selections.contains(option) {
                         Image(systemName: "checkmark")
                             .foregroundColor(.blue)
@@ -382,6 +412,20 @@ struct MultipleSelectionRow: View {
                 }
             }
         }
-        .padding(.vertical, 5)
+        .padding(.vertical, 20)
     }
+}
+struct TrainingSettings: Equatable {
+    var windowSizes: [Double]
+    var windowSteps: [Double]
+    var modelTypes: Set<String>
+    var preprocessingTypes: Set<String>
+    var filteringOptions: Set<String>
+    var scalerOptions: Set<String>
+    var usePCA: Bool
+    var includeAcceleration: Bool
+    var includeRotationRate: Bool
+    var isAutomatic: Bool
+    var maxTrainingTime: Double
+    var selectedSessionIDs: [UUID]
 }

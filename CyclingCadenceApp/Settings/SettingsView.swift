@@ -9,6 +9,9 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var viewModel: CyclingViewModel
+    @StateObject public var modelTrainingViewModel: ModelTrainingViewModel
+    @State private var navigateToTrainingView = false
+
     @State private var wheelDiameter: String = ""
     @State private var wheelCircumference: String = ""
     @State private var showDataView = false
@@ -121,7 +124,12 @@ struct SettingsView: View {
                     NavigationLink(destination: ModelManagerView(viewModel: viewModel)) {
                         Text("Manage Models")
                     }
-                    NavigationLink(destination: ModelTrainingView(cyclingViewModel: CyclingViewModel(), viewModel: ModelTrainingViewModel(cyclingViewModel: CyclingViewModel()), selectedSessionIDs: [])) {
+                    NavigationLink(
+                        destination: ModelTrainingView(
+                            cyclingViewModel: viewModel,
+                            viewModel: modelTrainingViewModel,
+                            selectedSessionIDs: []
+                        ))  {
                         Text("Train New Model")
                     }
                 }
