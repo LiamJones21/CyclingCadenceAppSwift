@@ -35,40 +35,71 @@ class PCA {
         meanVector = meanVector.map { $0 / Double(n) }
 
         // Subtract mean
-        var meanSubtractedData = data.map { zip($0, meanVector).map(-) }
+        let meanSubtractedData = data.map { zip($0, meanVector).map(-) }
 
-        // Flatten data into a single array
-        let flattenedData = meanSubtractedData.flatMap { $0 }
+        // Flatten data into a single array (column-major order)
+        var dataFlat = meanSubtractedData.flatMap { $0 }
+        let lda = __CLPK_integer(n)
+        var info: __CLPK_integer = 0
 
-        // Create matrix from data
-        var dataMatrix = la_matrix_from_double_buffer(flattenedData, la_count_t(n), la_count_t(m), la_count_t(m), LA_NO_HINT, LA_ATTRIBUTE_ENABLE_LOGGING)
+        // Compute covariance matrix using DSYRK
+        var covMatrix = [Double](repeating: 0.0, count: m * m)
+        var uplo: Int8 = 85 // 'U' in ASCII
+        var trans: Int8 = 78 // 'N' in ASCII
+        var n_cblas = __CLPK_integer(m)
+        var k = __CLPK_integer(n)
+        var alpha = 1.0 / Double(n - 1)
+        var beta = 0.0
 
-        // Compute covariance matrix
-        let transposedDataMatrix = la_transpose(dataMatrix)
-        let covarianceMatrix = la_syrk(.upper, .transposed, 1.0 / Double(n - 1), dataMatrix, 0.0, la_identity_matrix(m))
-
-        // Convert covariance matrix to array
-        var covarianceArray = [Double](repeating: 0.0, count: m * m)
-        la_matrix_to_double_buffer(&covarianceArray, la_count_t(m), covarianceMatrix)
-
-        // Perform eigen decomposition
-        var eigenvalues = [Double](repeating: 0.0, count: m)
-        var eigenvectors = [Double](repeating: 0.0, count: m * m)
-        var workspace = [Double](repeating: 0.0, count: 15 * m)
-        var info = Int32(0)
-        var lwork = Int32(workspace.count)
-
-        // Symmetric matrix eigen decomposition
-        covarianceArray.withUnsafeMutableBufferPointer { covarianceBuffer in
-            eigenvalues.withUnsafeMutableBufferPointer { eigenvaluesBuffer in
-                eigenvectors.withUnsafeMutableBufferPointer { eigenvectorsBuffer in
-                    dsyev_("V", "U", &Int32(m), covarianceBuffer.baseAddress!, &Int32(m), eigenvaluesBuffer.baseAddress!, &workspace, &lwork, &info)
-                }
+        dataFlat.withUnsafeMutableBufferPointer { dataPtr in
+            covMatrix.withUnsafeMutableBufferPointer { covPtr in
+                dsyrk_(&uplo, &trans, &n_cblas, &k, &alpha, dataPtr.baseAddress!, &k, &beta, covPtr.baseAddress!, &n_cblas)
             }
         }
 
-        // Sort eigenvalues and eigenvectors
+        // Compute eigenvalues and eigenvectors using the newer LAPACK functions
+        var jobz: Int8 = 86 // 'V' in ASCII
+        var range: Int8 = 65 // 'A' in ASCII
+        var diag: Int8 = 85 // 'U' in ASCII
+        var vl = 0.0
+        var vu = 0.0
+        var il: __CLPK_integer = 0
+        var iu: __CLPK_integer = 0
+        var abstol = -1.0
+        var w = [Double](repeating: 0.0, count: m)
+        var z = [Double](repeating: 0.0, count: m * m)
+        var ldz = n_cblas
+        var isuppz = [__CLPK_integer](repeating: 0, count: 2 * m)
+        var workSize = __CLPK_integer(-1)
+        var lwork: __CLPK_integer = 0
+        var iworkSize = __CLPK_integer(-1)
+        var liwork: __CLPK_integer = 0
+        var workQuery = [Double](repeating: 0.0, count: 1)
+        var iworkQuery = [__CLPK_integer](repeating: 0, count: 1)
+
+        // Query optimal workspace size
+        dsyevr_(&jobz, &range, &uplo, &n_cblas, &covMatrix, &n_cblas, &vl, &vu, &il, &iu, &abstol, &k, &w, &z, &ldz, &isuppz, &workQuery, &workSize, &iworkQuery, &iworkSize, &info)
+
+        lwork = __CLPK_integer(workQuery[0])
+        liwork = iworkQuery[0]
+
+        var work = [Double](repeating: 0.0, count: Int(lwork))
+        var iwork = [__CLPK_integer](repeating: 0, count: Int(liwork))
+
+        // Compute eigenvalues and eigenvectors
+        dsyevr_(&jobz, &range, &uplo, &n_cblas, &covMatrix, &n_cblas, &vl, &vu, &il, &iu, &abstol, &k, &w, &z, &ldz, &isuppz, &work, &lwork, &iwork, &liwork, &info)
+
+        if info != 0 {
+            print("Error in eigen decomposition: \(info)")
+            return
+        }
+
+        // Sort eigenvalues and eigenvectors in descending order
+        let eigenvalues = w
+        let eigenvectors = z
+
         let sortedIndices = eigenvalues.enumerated().sorted(by: { $0.element > $1.element }).map { $0.offset }
+
         components = []
         for i in 0..<numComponents {
             let index = sortedIndices[i]
@@ -91,16 +122,6 @@ class PCA {
             transformedData.append(transformedVector)
         }
         return transformedData
-    }
-
-    func transform(vector: [Double]) -> [Double] {
-        let meanSubtracted = zip(vector, meanVector).map(-)
-        var transformedVector: [Double] = []
-        for component in components {
-            let projection = dotProduct(meanSubtracted, component)
-            transformedVector.append(projection)
-        }
-        return transformedVector
     }
 
     private func dotProduct(_ a: [Double], _ b: [Double]) -> Double {

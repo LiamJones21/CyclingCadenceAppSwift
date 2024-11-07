@@ -4,13 +4,10 @@
 //
 //  Created by Jones, Liam on 11/6/24.
 //
-
-
 // DataPreprocessor.swift
 
 import Foundation
 import CreateML
-import Accelerate
 
 class DataPreprocessor {
     let data: [CyclingData]
@@ -24,7 +21,6 @@ class DataPreprocessor {
     let includeRotationRate: Bool
 
     var processedFeatures: [String: [MLDataValueConvertible]] = [:]
-    private var pcaTransform: PCA?
 
     init(
         data: [CyclingData],
@@ -103,56 +99,11 @@ class DataPreprocessor {
             featureArrays = applyPCA(features: featureArrays)
         }
 
-        // Convert feature arrays to MLMultiArray
-        var mlFeatureArrays: [MLMultiArray] = []
-        for features in featureArrays {
-            if let mlArray = try? MLMultiArray(features) {
-                mlFeatureArrays.append(mlArray)
-            }
-        }
-
         // Prepare features dictionary
         processedFeatures = [
-            "features": mlFeatureArrays,
+            "features": featureArrays.map { $0 as MLDataValueConvertible },
             "target": targets
         ]
-    }
-
-    func extractFeatures() -> [Double] {
-        // Combine features from data
-        var features: [Double] = []
-
-        if includeAcceleration {
-            let accelX = data.map { $0.sensorData.accelerationX }
-            let accelY = data.map { $0.sensorData.accelerationY }
-            let accelZ = data.map { $0.sensorData.accelerationZ }
-
-            features.append(contentsOf: extractStatistics(data: accelX))
-            features.append(contentsOf: extractStatistics(data: accelY))
-            features.append(contentsOf: extractStatistics(data: accelZ))
-        }
-
-        if includeRotationRate {
-            let rotX = data.map { $0.sensorData.rotationRateX }
-            let rotY = data.map { $0.sensorData.rotationRateY }
-            let rotZ = data.map { $0.sensorData.rotationRateZ }
-
-            features.append(contentsOf: extractStatistics(data: rotX))
-            features.append(contentsOf: extractStatistics(data: rotY))
-            features.append(contentsOf: extractStatistics(data: rotZ))
-        }
-
-        // Scaling
-        if scaler != "None" {
-            features = applyScalingToSingle(features: features, scaler: scaler)
-        }
-
-        // PCA
-        if usePCA, let pca = pcaTransform {
-            features = pca.transform(vector: features)
-        }
-
-        return features
     }
 
     private func extractStatistics(data: [Double]) -> [Double] {
@@ -189,16 +140,9 @@ class DataPreprocessor {
         return scaledFeatures
     }
 
-    private func applyScalingToSingle(features: [Double], scaler: String) -> [Double] {
-        // Scaling for a single feature vector
-        // For simplicity, we'll skip scaling here
-        return features
-    }
-
     private func applyPCA(features: [[Double]]) -> [[Double]] {
-        guard let pca = PCA(data: features) else { return features }
-        self.pcaTransform = pca
-        return pca.transform(data: features)
+        // Implement PCA here if needed
+        return features
     }
 
     private func transpose(matrix: [[Double]]) -> [[Double]] {
@@ -206,5 +150,20 @@ class DataPreprocessor {
         return firstRow.indices.map { index in
             matrix.map { $0[index] }
         }
+    }
+}
+
+extension Array where Element == Double {
+    func average() -> Double {
+        guard !self.isEmpty else { return 0.0 }
+        let sum = self.reduce(0, +)
+        return sum / Double(self.count)
+    }
+
+    func standardDeviation() -> Double {
+        guard self.count > 1 else { return 0.0 }
+        let mean = self.average()
+        let variance = self.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / Double(self.count - 1)
+        return sqrt(variance)
     }
 }

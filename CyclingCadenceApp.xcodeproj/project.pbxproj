@@ -841,6 +841,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CyclingCadenceApp/Info.plist;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Your app requires access to the local network for peer-to-peer connectivity";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app requires location access to track your cycling activity and provide speed information.";
 				INFOPLIST_KEY_NSNetworkVolumesUsageDescription = "$(MARKETING_VERSION)";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -873,6 +874,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = CyclingCadenceApp/Info.plist;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Your app requires access to the local network for peer-to-peer connectivity";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app requires location access to track your cycling activity and provide speed information.";
 				INFOPLIST_KEY_NSNetworkVolumesUsageDescription = "$(MARKETING_VERSION)";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

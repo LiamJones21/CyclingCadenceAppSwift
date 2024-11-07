@@ -9,8 +9,9 @@ import SwiftUI
 
 struct ExportOptionsView: View {
     let allSessions: [Session]
+    @Binding var exportFormat: ExportFormat // Update the property
     @Binding var selectedSessions: [Session]
-    @Binding var exportFormat: DataView.ExportFormat
+//    @Binding var exportFormat: DataView.ExportFormat
     let exportAction: () -> Void
     let cancelAction: () -> Void
 
@@ -19,7 +20,7 @@ struct ExportOptionsView: View {
             Form {
                 Section(header: Text("Export Format")) {
                     Picker("Format", selection: $exportFormat) {
-                        ForEach(DataView.ExportFormat.allCases) { format in
+                        ForEach(ExportFormat.allCases) { format in
                             Text(format.rawValue).tag(format)
                         }
                     }
@@ -107,4 +108,9 @@ struct AddSessionsView: View {
             })
         }
     }
+}
+enum ExportFormat: String, CaseIterable, Identifiable {
+    var id: String { rawValue }
+    case json
+    case csv
 }

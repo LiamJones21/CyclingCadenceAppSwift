@@ -14,7 +14,7 @@ class ModelClient: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServic
     private let peerID = MCPeerID(displayName: UIDevice.current.name)
     private var session: MCSession!
     private var browser: MCNearbyServiceBrowser!
-    @Published var availableModels: [ModelInfo] = []
+//    @Published var availableModels: [ModelInfo] = []
     @Published var receivedModelURL: URL?
 
     override init() {

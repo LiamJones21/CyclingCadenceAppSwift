@@ -206,115 +206,115 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
         }
 
         // MARK: - Model Training and Prediction
-    func loadSelectedModel() -> MLRegressor? {
-            guard let index = selectedModelIndex else { return nil }
-            let modelInfo = models[index]
-            let modelURL = getDocumentsDirectory().appendingPathComponent("\(modelInfo.name).mlmodelc")
-            guard let model = try? MLRegressor(contentsOf: modelURL) else { return nil }
-            return model
-        }
-
-        func predictOverData(session: Session, model: MLRegressor, modelConfig: ModelConfig.Config) -> [PredictionResult] {
-            var predictionResults: [PredictionResult] = []
-
-            let data = session.data
-            let windowSize = modelConfig.windowSize
-            let windowStep = modelConfig.windowStep
-            let totalWindows = (data.count - windowSize) / windowStep + 1
-
-            for windowIndex in 0..<totalWindows {
-                let start = windowIndex * windowStep
-                let end = start + windowSize
-                let window = Array(data[start..<end])
-
-                let preprocessor = DataPreprocessor(
-                    data: window,
-                    windowSize: windowSize,
-                    windowStep: windowStep,
-                    preprocessingType: modelConfig.preprocessingType,
-                    filtering: modelConfig.filtering,
-                    scaler: modelConfig.scaler,
-                    usePCA: modelConfig.usePCA,
-                    includeAcceleration: modelConfig.includeAcceleration,
-                    includeRotationRate: modelConfig.includeRotationRate
-                )
-
-                let featureVector = preprocessor.extractFeatures()
-                guard let inputArray = try? MLMultiArray(featureVector) else {
-                    continue
-                }
-                let inputDict = ["features": inputArray]
-                guard let inputProvider = try? MLDictionaryFeatureProvider(dictionary: inputDict) else {
-                    continue
-                }
-
-                if let prediction = try? model.prediction(from: inputProvider),
-                   let predictedCadenceValue = prediction.featureValue(for: "target")?.doubleValue {
-                    let timestamp = window.last?.timestamp ?? Date()
-                    let actualData = window.last!
-
-                    let predictionResult = PredictionResult(
-                        timestamp: timestamp,
-                        cadence: predictedCadenceValue,
-                        gear: actualData.gear,
-                        terrain: actualData.terrain,
-                        isStanding: actualData.isStanding,
-                        speed: actualData.speed
-                    )
-                    predictionResults.append(predictionResult)
-                }
-            }
-            return predictionResults
-        }
-
-
-        func loadTrainingData() -> [CyclingData]? {
-            // Load your collected cycling data
-            // Return an array of CyclingData
-            // Implement this function based on your data storage
-            return sessions.flatMap { $0.data }
-        }
-
-        func preprocessData(data: [CyclingData], windowSize: Int, windowStep: Int, includeFFT: Bool, includeWavelet: Bool) -> [String: [MLDataValueConvertible]] {
-            var features: [String: [MLDataValueConvertible]] = [:]
-
-            // Initialize feature arrays
-            var meanAccelX: [Double] = []
-            var meanAccelY: [Double] = []
-            var meanAccelZ: [Double] = []
-            var speed: [Double] = []
-            var cadence: [Double] = []
-            var terrain: [String] = []
-            var isStanding: [Bool] = []
-
-//            // Process data into windows
-//            for start in stride(from: 0, to: data.count - windowSize, by: windowStep) {
+//    func loadSelectedModel() -> MLRegressor? {
+//            guard let index = selectedModelIndex else { return nil }
+//            let modelInfo = models[index]
+//            let modelURL = getDocumentsDirectory().appendingPathComponent("\(modelInfo.name).mlmodelc")
+//            guard let model = try? MLRegressor(contentsOf: modelURL) else { return nil }
+//            return model
+//        }
+//
+//        func predictOverData(session: Session, model: MLRegressor, modelConfig: ModelConfig.Config) -> [PredictionResult] {
+//            var predictionResults: [PredictionResult] = []
+//
+//            let data = session.data
+//            let windowSize = modelConfig.windowSize
+//            let windowStep = modelConfig.windowStep
+//            let totalWindows = (data.count - windowSize) / windowStep + 1
+//
+//            for windowIndex in 0..<totalWindows {
+//                let start = windowIndex * windowStep
 //                let end = start + windowSize
 //                let window = Array(data[start..<end])
 //
-//                // Extract features
-////                let featureValues = extractFeatures(window: window, includeFFT: includeFFT, includeWavelet: includeWavelet)
+//                let preprocessor = DataPreprocessor(
+//                    data: window,
+//                    windowSize: windowSize,
+//                    windowStep: windowStep,
+//                    preprocessingType: modelConfig.preprocessingType,
+//                    filtering: modelConfig.filtering,
+//                    scaler: modelConfig.scaler,
+//                    usePCA: modelConfig.usePCA,
+//                    includeAcceleration: modelConfig.includeAcceleration,
+//                    includeRotationRate: modelConfig.includeRotationRate
+//                )
 //
-//                meanAccelX.append(featureValues.meanAccelX)
-//                meanAccelY.append(featureValues.meanAccelY)
-//                meanAccelZ.append(featureValues.meanAccelZ)
-//                speed.append(featureValues.meanSpeed)
-//                cadence.append(featureValues.meanCadence)
-//                terrain.append(featureValues.modeTerrain)
-//                isStanding.append(featureValues.modeIsStanding)
+//                let featureVector = preprocessor.extractFeatures()
+//                guard let inputArray = try? MLMultiArray(featureVector) else {
+//                    continue
+//                }
+//                let inputDict = ["features": inputArray]
+//                guard let inputProvider = try? MLDictionaryFeatureProvider(dictionary: inputDict) else {
+//                    continue
+//                }
+//
+//                if let prediction = try? model.prediction(from: inputProvider),
+//                   let predictedCadenceValue = prediction.featureValue(for: "target")?.doubleValue {
+//                    let timestamp = window.last?.timestamp ?? Date()
+//                    let actualData = window.last!
+//
+//                    let predictionResult = PredictionResult(
+//                        timestamp: timestamp,
+//                        cadence: predictedCadenceValue,
+//                        gear: actualData.gear,
+//                        terrain: actualData.terrain,
+//                        isStanding: actualData.isStanding,
+//                        speed: actualData.speed
+//                    )
+//                    predictionResults.append(predictionResult)
+//                }
 //            }
-
-            // Assign feature arrays to the dictionary
-            features["meanAccelX"] = meanAccelX
-            features["meanAccelY"] = meanAccelY
-            features["meanAccelZ"] = meanAccelZ
-            features["speed"] = speed
-            features["cadence"] = cadence
-            features["terrain"] = terrain
-            features["isStanding"] = isStanding
-
-            return features
-        }
+//            return predictionResults
+//        }
+//
+//
+//        func loadTrainingData() -> [CyclingData]? {
+//            // Load your collected cycling data
+//            // Return an array of CyclingData
+//            // Implement this function based on your data storage
+//            return sessions.flatMap { $0.data }
+//        }
+//
+//        func preprocessData(data: [CyclingData], windowSize: Int, windowStep: Int, includeFFT: Bool, includeWavelet: Bool) -> [String: [MLDataValueConvertible]] {
+//            var features: [String: [MLDataValueConvertible]] = [:]
+//
+//            // Initialize feature arrays
+//            var meanAccelX: [Double] = []
+//            var meanAccelY: [Double] = []
+//            var meanAccelZ: [Double] = []
+//            var speed: [Double] = []
+//            var cadence: [Double] = []
+//            var terrain: [String] = []
+//            var isStanding: [Bool] = []
+//
+////            // Process data into windows
+////            for start in stride(from: 0, to: data.count - windowSize, by: windowStep) {
+////                let end = start + windowSize
+////                let window = Array(data[start..<end])
+////
+////                // Extract features
+//////                let featureValues = extractFeatures(window: window, includeFFT: includeFFT, includeWavelet: includeWavelet)
+////
+////                meanAccelX.append(featureValues.meanAccelX)
+////                meanAccelY.append(featureValues.meanAccelY)
+////                meanAccelZ.append(featureValues.meanAccelZ)
+////                speed.append(featureValues.meanSpeed)
+////                cadence.append(featureValues.meanCadence)
+////                terrain.append(featureValues.modeTerrain)
+////                isStanding.append(featureValues.modeIsStanding)
+////            }
+//
+//            // Assign feature arrays to the dictionary
+//            features["meanAccelX"] = meanAccelX
+//            features["meanAccelY"] = meanAccelY
+//            features["meanAccelZ"] = meanAccelZ
+//            features["speed"] = speed
+//            features["cadence"] = cadence
+//            features["terrain"] = terrain
+//            features["isStanding"] = isStanding
+//
+//            return features
+//        }
         
 //        func extractFeatures(window: [CyclingData], includeFFT: Bool, includeWavelet: Bool) -> (meanAccelX: Double, meanAccelY: Double, meanAccelZ: Double, meanSpeed: Double, meanCadence: Double, modeTerrain: String, modeIsStanding: Bool) {
 //            func extractFeatures(window: [CyclingData], includeFFT: Bool, includeWavelet: Bool) -> (0.0) {

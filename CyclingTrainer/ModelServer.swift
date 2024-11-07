@@ -8,15 +8,16 @@
 
 import Foundation
 import MultipeerConnectivity
+import CoreML
 
 class ModelServer: NSObject, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate {
     private let serviceType = "cycling-model"
     private let peerID = MCPeerID(displayName: Host.current().localizedName ?? "Mac")
     private var session: MCSession!
     private var advertiser: MCNearbyServiceAdvertiser!
-    private weak var viewModel: CyclingTrainerViewModel?
+    private weak var viewModel: ModelTrainingViewModel?
 
-    init(viewModel: CyclingTrainerViewModel) {
+    init(viewModel: ModelTrainingViewModel) {
         self.viewModel = viewModel
         super.init()
         session = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .required)

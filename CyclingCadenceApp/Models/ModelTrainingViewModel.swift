@@ -5,249 +5,216 @@
 //  Created by Jones, Liam on 11/6/24.
 //
 
-
 // ModelTrainingViewModel.swift
-
 import Foundation
 import SwiftUI
-import CreateML
-import Accelerate
+import Combine
+import MultipeerConnectivity
 import CoreML
 
-class ModelTrainingViewModel: ObservableObject {
+class ModelTrainingViewModel: NSObject, ObservableObject, MCSessionDelegate, MCNearbyServiceBrowserDelegate {
+    
+    @Published var sessions: [Session] = []
     @Published var models: [ModelConfig] = []
-    @Published var selectedModelIndex: Int?
     @Published var trainingLogs: String = ""
     @Published var trainingInProgress: Bool = false
     @Published var trainingError: Double?
     @Published var selectedSessions: Set<UUID> = []
-    @Published var sessions: [Session] = []
+    @Published var bestAccuracy: Double?
+    @Published var connectedPeers: [MCPeerID] = []
+    
+    private var cancellables = Set<AnyCancellable>()
+    
+    // **Add cyclingViewModel as a property**
+    private let cyclingViewModel: CyclingViewModel
+    
+    // Networking properties
+    private let serviceType = "cyclingtrainer"
+    private let myPeerID = MCPeerID(displayName: UIDevice.current.name)
+    private var session: MCSession!
+    private var browser: MCNearbyServiceBrowser!
+    
+    // Initialize with CyclingViewModel
+    init(cyclingViewModel: CyclingViewModel) {
+        // **Assign the passed cyclingViewModel to the property**
+        self.cyclingViewModel = cyclingViewModel
+        self.sessions = cyclingViewModel.sessions
 
-    init(sessions: [Session]) {
-        self.sessions = sessions
+        super.init()
+        
+        // Observe changes in cyclingViewModel.sessions
+        cyclingViewModel.$sessions
+            .sink { [weak self] updatedSessions in
+                self?.sessions = updatedSessions
+            }
+            .store(in: &cancellables)
+        
+        session = MCSession(peer: myPeerID, securityIdentity: nil, encryptionPreference: .required)
+        session.delegate = self
+        browser = MCNearbyServiceBrowser(peer: myPeerID, serviceType: serviceType)
+        browser.delegate = self
+        browser.startBrowsingForPeers()
+        loadSessions()
         loadModels()
     }
+    
+    deinit {
+        browser.stopBrowsingForPeers()
+        session.disconnect()
+    }
 
+    // Load sessions from CyclingViewModel
+    func loadSessions() {
+        self.sessions = cyclingViewModel.sessions
+    }
+    
+    func saveSessions() {
+        cyclingViewModel.sessions = self.sessions
+    }
+    
+    // Load models from CyclingViewModel
     func loadModels() {
-        // Similar to the loadModels method in CyclingViewModel
+        self.models = cyclingViewModel.models
     }
-
-    func trainModel(
-        windowSize: Int,
-        windowStep: Int,
-        modelTypes: [String],
-        preprocessingTypes: [String],
-        filteringOptions: [String],
-        scalerOptions: [String],
-        usePCA: Bool,
-        includeAcceleration: Bool,
-        includeRotationRate: Bool,
-        isAutomatic: Bool,
-        maxTrainingTime: Double,
-        parametersToOptimize: [String],
-        selectedSessions: [Session],
-        logHandler: @escaping (String) -> Void,
-        completion: @escaping (Double?) -> Void
-    ) {
-        DispatchQueue.global(qos: .userInitiated).async {
-            let startTime = Date()
-            guard let data = self.loadTrainingData(from: selectedSessions) else {
-                DispatchQueue.main.async {
-                    completion(nil)
-                }
-                return
+    
+    func saveModels() {
+        cyclingViewModel.models = self.models
+    }
+    
+    // MARK: - Networking Methods
+    
+    func sendMessage(message: [String: Any], to peerID: MCPeerID) {
+        do {
+            let data = try JSONSerialization.data(withJSONObject: message, options: [])
+            try session.send(data, toPeers: [peerID], with: .reliable)
+        } catch {
+            print("Error sending message: \(error)")
+        }
+    }
+    
+    func sendSessionsList(to peerID: MCPeerID) {
+        let sessionList = sessions.map { $0.toDictionary() }
+        let message: [String: Any] = ["type": "sessionList", "sessions": sessionList]
+        sendMessage(message: message, to: peerID)
+    }
+    
+    func sendSessionData(sessionID: UUID, to peerID: MCPeerID) {
+        if let session = sessions.first(where: { $0.id == sessionID }) {
+            if let data = try? JSONEncoder().encode(session) {
+                let message: [String: Any] = ["type": "sessionData", "data": data]
+                sendMessage(message: message, to: peerID)
             }
-
-            var bestModel: MLRegressor?
-            var lowestError: Double = Double.greatestFiniteMagnitude
-            var bestModelConfig: ModelConfig?
-
-            if isAutomatic {
-                // Implement Bayesian optimization
-                let optimizer = HyperparameterOptimizer(
-                    data: data,
-                    maxTime: maxTrainingTime,
-                    modelTypes: modelTypes,
-                    preprocessingTypes: preprocessingTypes,
-                    filteringOptions: filteringOptions,
-                    scalerOptions: scalerOptions,
-                    usePCAOptions: [usePCA],
-                    includeAccelerationOptions: [includeAcceleration],
-                    includeRotationRateOptions: [includeRotationRate],
-                    parametersToOptimize: parametersToOptimize,
-                    windowSizeOptions: [windowSize],
-                    windowStepOptions: [windowStep],
-                    logHandler: logHandler
+        }
+    }
+    
+    func handleReceivedTrainingLog(_ log: String) {
+        DispatchQueue.main.async {
+            self.trainingLogs.append(contentsOf: log + "\n")
+        }
+    }
+    
+    func handleTrainingCompleted(message: [String: Any]) {
+        DispatchQueue.main.async {
+            self.trainingInProgress = false
+            self.trainingError = message["bestAccuracy"] as? Double
+        }
+    }
+    
+    // MARK: - MCSessionDelegate Methods
+    
+    func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
+        DispatchQueue.main.async {
+            switch state {
+            case .connected:
+                self.connectedPeers.append(peerID)
+            case .notConnected:
+                self.connectedPeers.removeAll(where: { $0 == peerID })
+            default:
+                break
+            }
+        }
+    }
+    
+    func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
+        if let message = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+           let type = message["type"] as? String {
+            switch type {
+            case "requestSessionsList":
+                self.sendSessionsList(to: peerID)
+            case "trainingLog":
+                if let log = message["log"] as? String {
+                    self.handleReceivedTrainingLog(log)
+                }
+            case "trainingCompleted":
+                self.handleTrainingCompleted(message: message)
+            case "modelData":
+                if let modelName = message["modelName"] as? String {
+                    // Expecting the next data packet to be model data
+                    // Handle accordingly if needed
+                }
+            default:
+                break
+            }
+        } else {
+            // Assuming the data is model data
+            if let modelName = "ReceivedModel_\(Date().timeIntervalSince1970)" as String? {
+                self.handleReceivedModel(data: data, modelName: modelName)
+            }
+        }
+    }
+    
+    func handleReceivedModel(data: Data, modelName: String) {
+        let modelURL = getDocumentsDirectory().appendingPathComponent("\(modelName).mlmodel")
+        do {
+            try data.write(to: modelURL)
+            // Compile the model
+            let compiledModelURL = try MLModel.compileModel(at: modelURL)
+            // Save the model info
+            DispatchQueue.main.async {
+                let config = ModelConfig.Config(
+                    windowSize: 0,
+                    windowStep: 0,
+                    preprocessingType: "",
+                    filtering: "",
+                    scaler: "",
+                    usePCA: false,
+                    includeAcceleration: false,
+                    includeRotationRate: false
                 )
-
-                optimizer.optimize { model, error, config in
-                    bestModel = model
-                    lowestError = error
-                    bestModelConfig = config
-                    DispatchQueue.main.async {
-                        self.saveModel(model: model, config: config)
-                        completion(lowestError)
-                    }
-                }
-            } else {
-                // Manual training
-                for modelType in modelTypes {
-                    for preprocessingType in preprocessingTypes {
-                        for filtering in filteringOptions {
-                            for scaler in scalerOptions {
-                                let preprocessor = DataPreprocessor(
-                                    data: data,
-                                    windowSize: windowSize,
-                                    windowStep: windowStep,
-                                    preprocessingType: preprocessingType,
-                                    filtering: filtering,
-                                    scaler: scaler,
-                                    usePCA: usePCA,
-                                    includeAcceleration: includeAcceleration,
-                                    includeRotationRate: includeRotationRate
-                                )
-
-                                let features = preprocessor.processedFeatures
-
-                                guard let dataTable = try? MLDataTable(dictionary: features) else {
-                                    continue
-                                }
-                                let (trainingData, testingData) = dataTable.randomSplit(by: 0.8, seed: 42)
-                                let configuration = MLModelConfiguration()
-                                configuration.computeUnits = .all
-
-                                let model = self.trainModelOfType(
-                                    modelType,
-                                    trainingData: trainingData,
-                                    configuration: configuration
-                                )
-
-                                if let model = model {
-                                    let evaluationMetrics = model.evaluation(on: testingData)
-                                    let error = evaluationMetrics.rootMeanSquaredError
-
-                                    logHandler("Model: \(modelType), RMSE: \(error)")
-                                    if error < lowestError {
-                                        lowestError = error
-                                        bestModel = model
-                                        bestModelConfig = ModelConfig(
-                                            name: "\(modelType)_\(Date().timeIntervalSince1970)",
-                                            config: ModelConfig.Config(
-                                                windowSize: windowSize,
-                                                windowStep: windowStep,
-                                                preprocessingType: preprocessingType,
-                                                filtering: filtering,
-                                                scaler: scaler,
-                                                usePCA: usePCA,
-                                                includeAcceleration: includeAcceleration,
-                                                includeRotationRate: includeRotationRate
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                DispatchQueue.main.async {
-                    self.saveModel(model: bestModel, config: bestModelConfig)
-                    completion(lowestError)
-                }
+                let modelConfig = ModelConfig(id: UUID(), name: modelName, config: config)
+                self.models.append(modelConfig)
+                self.saveModels()
             }
-        }
-    }
-
-    private func trainModelOfType(_ modelType: String, trainingData: MLDataTable, configuration: MLModelConfiguration) -> MLRegressor? {
-        switch modelType {
-        case "LightGBM", "XGBoost":
-            let parameters = MLBoostedTreeRegressor.ModelParameters()
-            return try? MLBoostedTreeRegressor(
-                trainingData: trainingData,
-                targetColumn: "target",
-                parameters: parameters,
-                configuration: configuration
-            )
-        case "RandomForest":
-            let parameters = MLRandomForestRegressor.ModelParameters()
-            return try? MLRandomForestRegressor(
-                trainingData: trainingData,
-                targetColumn: "target",
-                parameters: parameters,
-                configuration: configuration
-            )
-        case "MLP":
-            let parameters = MLNeuralNetworkRegressor.ModelParameters()
-            return try? MLNeuralNetworkRegressor(
-                trainingData: trainingData,
-                targetColumn: "target",
-                parameters: parameters,
-                configuration: configuration
-            )
-        case "LSTM":
-            return self.trainLSTMModel(trainingData: trainingData, configuration: configuration)
-        default:
-            print("Unsupported model type: \(modelType)")
-            return nil
-        }
-    }
-
-    private func trainLSTMModel(trainingData: MLDataTable, configuration: MLModelConfiguration) -> MLRegressor? {
-        // Implement LSTM training
-        // Create MLSequenceRegressor
-        let parameters = MLSequenceRegressor.ModelParameters()
-        return try? MLSequenceRegressor(
-            trainingData: trainingData,
-            targetColumn: "target",
-            parameters: parameters,
-            configuration: configuration
-        )
-    }
-
-    func loadTrainingData(from sessions: [Session]) -> [CyclingData]? {
-        return sessions.flatMap { $0.data }
-    }
-
-    private func saveModel(model: MLRegressor?, config: ModelConfig?) {
-        guard let model = model, let config = config else { return }
-        let modelName = config.name
-        let saveURL = getDocumentsDirectory().appendingPathComponent("\(modelName).mlmodel")
-        do {
-            try model.write(to: saveURL)
-            models.append(config)
-            saveModelsToFile()
         } catch {
-            print("Error saving model: \(error.localizedDescription)")
-        }
-
-        // Save model config
-        let configURL = getDocumentsDirectory().appendingPathComponent("\(modelName).json")
-        do {
-            let encoder = JSONEncoder()
-            let configData = try encoder.encode(config.config)
-            try configData.write(to: configURL)
-        } catch {
-            print("Error saving model config: \(error.localizedDescription)")
+            print("Error saving or compiling model: \(error)")
         }
     }
-
+    
+    // Empty implementations for required delegate methods
+    func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {}
+    
+    func session(_ session: MCSession, didStartReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, with progress: Progress) {}
+    
+    func session(_ session: MCSession, didFinishReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, at localURL: URL?, withError error: Error?) {}
+    
+    // MARK: - MCNearbyServiceBrowserDelegate Methods
+    
+    func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
+        print("Failed to start browsing: \(error.localizedDescription)")
+    }
+    
+    func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
+        print("Found peer: \(peerID.displayName)")
+        browser.invitePeer(peerID, to: session, withContext: nil, timeout: 30)
+    }
+    
+    func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
+        print("Lost peer: \(peerID.displayName)")
+    }
+    
+    // Helper methods
+    
     func getDocumentsDirectory() -> URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }
-
-    func saveModelsToFile() {
-        let fileName = "ModelsData.json"
-        let fileURL = getDocumentsDirectory().appendingPathComponent(fileName)
-
-        do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = .prettyPrinted
-            let data = try encoder.encode(models)
-            try data.write(to: fileURL)
-            print("Models saved to \(fileURL)")
-        } catch {
-            print("Error saving models: \(error)")
-        }
-    }
-
-    // ... (Other methods if needed)
 }
