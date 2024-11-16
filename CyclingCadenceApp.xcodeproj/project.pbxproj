@@ -100,16 +100,28 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Notifications.swift,
 			);
 			target = E14D03F32CC5980100E22AFB /* CyclingCadenceApp */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		E12D34592CE2C6D5006E82E2 /* Exceptions for "CyclingCadenceApp" folder in "Copy Bundle Resources" phase from "CyclingCadenceApp" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = E14D03F22CC5980100E22AFB /* Resources */;
+			membershipExceptions = (
+				Notifications.swift,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E14D03F62CC5980100E22AFB /* CyclingCadenceApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				E1F1A84D2CC6E8A9000E493E /* Exceptions for "CyclingCadenceApp" folder in "CyclingCadenceApp" target */,
+				E12D34592CE2C6D5006E82E2 /* Exceptions for "CyclingCadenceApp" folder in "Copy Bundle Resources" phase from "CyclingCadenceApp" target */,
 			);
 			path = CyclingCadenceApp;
 			sourceTree = "<group>";

@@ -10,8 +10,8 @@
 
 import Foundation
 
-struct ModelConfig: Identifiable, Codable {
-    var id = UUID()
+struct ModelConfig: Codable, Identifiable {
+    var id: UUID
     var name: String
     var config: Config
 
@@ -24,6 +24,22 @@ struct ModelConfig: Identifiable, Codable {
         var usePCA: Bool
         var includeAcceleration: Bool
         var includeRotationRate: Bool
-        // Add other preprocessing parameters as needed
+    }
+
+    func toDictionary() -> [String: Any] {
+        return [
+            "id": id.uuidString,
+            "name": name,
+            "config": [
+                "windowSize": config.windowSize,
+                "windowStep": config.windowStep,
+                "preprocessingType": config.preprocessingType,
+                "filtering": config.filtering,
+                "scaler": config.scaler,
+                "usePCA": config.usePCA,
+                "includeAcceleration": config.includeAcceleration,
+                "includeRotationRate": config.includeRotationRate
+            ]
+        ]
     }
 }

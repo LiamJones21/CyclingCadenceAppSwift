@@ -6,65 +6,84 @@
 //
 
 
-// Views/SessionsView.swift
-
+// SessionsView.swift
 import SwiftUI
 
 struct SessionsView: View {
     @ObservedObject var viewModel: ModelTrainingViewModel
-    @State private var selectedSessions = Set<UUID>()
-    @State private var showSessionSelector = false
-    @State private var selectedSessionsToTrain: [Session] = []
-    
+    @State private var selectedLocalSessions = Set<UUID>()
+    @State private var selectedPhoneSessions = Set<UUID>()
+
     var body: some View {
         VStack(alignment: .leading) {
             Text("Sessions")
                 .font(.largeTitle)
                 .padding(.bottom, 10)
-            
-            List(selection: $selectedSessions) {
+
+            List {
                 Section(header: Text("Local Sessions")) {
                     ForEach(viewModel.sessions) { session in
-                        Text(session.name ?? session.dateFormatted)
-                            .tag(session.id)
+                        HStack {
+                            Text(session.name ?? session.dateFormatted)
+                            Spacer()
+                            Button(action: {
+                                // Send session to phone
+                                sendSessionToPhone(session)
+                            }) {
+                                Image(systemName: "square.and.arrow.up")
+                                    .foregroundColor(.blue)
+                            }
+                        }
                     }
                 }
-                
+
                 if !viewModel.phoneSessions.isEmpty {
                     Section(header: Text("Phone Sessions")) {
                         ForEach(viewModel.phoneSessions) { session in
                             HStack {
                                 Text(session.name ?? session.dateFormatted)
-                                    .tag(session.id)
                                 Spacer()
-                                Button("Download") {
-                                    downloadSession(session)
+                                Button(action: {
+                                    // Request session from phone
+                                    requestSessionFromPhone(session)
+                                }) {
+                                    Image(systemName: "square.and.arrow.down")
+                                        .foregroundColor(.green)
                                 }
                             }
                         }
                     }
                 }
             }
-            .listStyle(SidebarListStyle()) // Changed from InsetGroupedListStyle() to SidebarListStyle()
+            .listStyle(SidebarListStyle())
             .frame(minWidth: 300, maxHeight: .infinity)
             .toolbar {
                 ToolbarItem(placement: .automatic) {
                     Button(action: {
-                        showSessionSelector = true
+                        viewModel.requestSessionsFromPhone()
                     }) {
-                        Label("Select Sessions", systemImage: "checkmark.circle")
+                        Label("Refresh Phone Sessions", systemImage: "arrow.clockwise")
                     }
                 }
-            }
-            .sheet(isPresented: $showSessionSelector) {
-                SessionSelectorView(sessions: viewModel.sessions, selectedSessions: $selectedSessionsToTrain)
             }
         }
         .padding()
     }
-    
-    func downloadSession(_ session: Session) {
-        viewModel.sessions.append(session)
-        viewModel.saveLocalSessions()
+
+    func sendSessionToPhone(_ session: Session) {
+        // Implement sending session to phone
+        if let peerID = viewModel.connectedPeers.first {
+            let sessionData = session.toDictionary()
+            let message: [String: Any] = ["type": "sessionData", "session": sessionData]
+            viewModel.sendMessage(message: message, to: peerID)
+        }
+    }
+
+    func requestSessionFromPhone(_ session: Session) {
+        // Implement requesting session from phone
+        if let peerID = viewModel.connectedPeers.first {
+            let message: [String: Any] = ["type": "requestSessionData", "sessionID": session.id.uuidString]
+            viewModel.sendMessage(message: message, to: peerID)
+        }
     }
 }

@@ -6,37 +6,36 @@
 //
 
 
-// Views/SidebarView.swift
+// SidebarView.swift
 
 import SwiftUI
 
 struct SidebarView: View {
     @ObservedObject var viewModel: ModelTrainingViewModel
-    @Binding var selectedView: SidebarItem
-    
+    @Binding var selectedView: SidebarItem?
+
     var body: some View {
-        List {
+        List(selection: $selectedView) {
             Section(header: Text("Navigation")) {
-                Button(action: { selectedView = .home }) {
+                NavigationLink(destination: HomePageView(), tag: SidebarItem.home, selection: $selectedView) {
                     Label("Home", systemImage: "house")
                 }
-                Button(action: { selectedView = .info }) {
+                NavigationLink(destination: InfoView(), tag: SidebarItem.info, selection: $selectedView) {
                     Label("Info", systemImage: "info.circle")
                 }
-                Button(action: { selectedView = .sessions }) {
+                NavigationLink(destination: SessionsView(viewModel: viewModel), tag: SidebarItem.sessions, selection: $selectedView) {
                     Label("Sessions", systemImage: "doc.text")
                 }
-                Button(action: { selectedView = .models }) {
+                NavigationLink(destination: ModelsView(viewModel: viewModel), tag: SidebarItem.models, selection: $selectedView) {
                     Label("Models", systemImage: "cube.box")
                 }
-                Button(action: { selectedView = .training }) {
+                NavigationLink(destination: TrainingAndLogsView(viewModel: viewModel), tag: SidebarItem.training, selection: $selectedView) {
                     Label("Training", systemImage: "play.circle")
                 }
-                Button(action: { selectedView = .results }) {
+                NavigationLink(destination: ResultsView(viewModel: viewModel), tag: SidebarItem.results, selection: $selectedView) {
                     Label("Results", systemImage: "chart.bar")
                 }
             }
-            .collapsible(false)
             
             Section(header: Text("Actions")) {
                 Button(action: {

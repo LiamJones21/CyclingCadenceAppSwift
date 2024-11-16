@@ -24,19 +24,19 @@ class ModelTrainingViewModel: NSObject, ObservableObject, MCSessionDelegate, MCN
     @Published var connectedPeers: [MCPeerID] = []
     
     @Published var trainingSettings = TrainingSettings(
-            windowSizes: [],
-            windowSteps: [],
-            modelTypes: [],
-            preprocessingTypes: [],
-            filteringOptions: [],
-            scalerOptions: [],
-            usePCA: false,
-            includeAcceleration: true,
-            includeRotationRate: true,
-            isAutomatic: false,
-            maxTrainingTime: 300,
-            selectedSessionIDs: []
-        )
+        windowSizes: [],
+        windowSteps: [],
+        modelTypes: [],
+        preprocessingTypes: [],
+        filteringOptions: [],
+        scalerOptions: [],
+        usePCA: false,
+        includeAcceleration: true,
+        includeRotationRate: true,
+        isAutomatic: false,
+        maxTrainingTime: 300,
+        selectedSessionIDs: []
+    )
     
     private var cancellables = Set<AnyCancellable>()
     
@@ -56,54 +56,42 @@ class ModelTrainingViewModel: NSObject, ObservableObject, MCSessionDelegate, MCN
         self.sessions = cyclingViewModel.sessions
 
         super.init()
-        
+
         // Observe changes in cyclingViewModel.sessions
         cyclingViewModel.$sessions
             .sink { [weak self] updatedSessions in
                 self?.sessions = updatedSessions
             }
             .store(in: &cancellables)
-        
+
         $trainingSettings
-                    .removeDuplicates()  // Avoid sending updates if the values haven't actually changed
-                    .sink { [weak self] updatedSettings in
-                        self?.sendUpdatedSettingsToMac(updatedSettings)
-                    }
-                    .store(in: &cancellables)
-        
+            .removeDuplicates()  // Avoid sending updates if the values haven't actually changed
+            .sink { [weak self] updatedSettings in
+                self?.sendUpdatedSettingsToMac(updatedSettings)
+            }
+            .store(in: &cancellables)
+
+        setupSession()
+//        setupBrowser()
+        loadSessions()
+        loadModels()
+    }
+
+    private func setupSession() {
         session = MCSession(peer: myPeerID, securityIdentity: nil, encryptionPreference: .required)
         session.delegate = self
+    }
+
+    private func setupBrowser() {
         browser = MCNearbyServiceBrowser(peer: myPeerID, serviceType: serviceType)
         browser.delegate = self
         browser.startBrowsingForPeers()
-        loadSessions()
-        loadModels()
     }
     
     deinit {
         browser.stopBrowsingForPeers()
         session.disconnect()
     }
-    private func sendUpdatedSettingsToMac(_ settings: TrainingSettings) {
-            let parameters: [String: Any] = [
-                "windowSizes": settings.windowSizes.map { Int($0 * 50) },
-                "windowSteps": settings.windowSteps.map { Int($0 * 50) },
-                "modelTypes": Array(settings.modelTypes),
-                "preprocessingTypes": Array(settings.preprocessingTypes),
-                "filteringOptions": Array(settings.filteringOptions),
-                "scalerOptions": Array(settings.scalerOptions),
-                "usePCA": settings.usePCA,
-                "includeAcceleration": settings.includeAcceleration,
-                "includeRotationRate": settings.includeRotationRate,
-                "isAutomatic": settings.isAutomatic,
-                "maxTrainingTime": settings.maxTrainingTime,
-                "selectedSessionIDs": settings.selectedSessionIDs.map { $0.uuidString }
-            ]
-            
-            if let peerID = connectedPeers.first {
-                sendMessage(message: parameters, to: peerID)
-            }
-        }
 
     // Load sessions from CyclingViewModel
     func loadSessions() {
@@ -165,18 +153,23 @@ class ModelTrainingViewModel: NSObject, ObservableObject, MCSessionDelegate, MCN
     // MARK: - MCSessionDelegate Methods
     
     func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
-        DispatchQueue.main.async {
-            switch state {
-            case .connected:
-                self.connectedPeers.append(peerID)
-            case .notConnected:
-                self.connectedPeers.removeAll(where: { $0 == peerID })
-            default:
-                break
+            DispatchQueue.main.async {
+                switch state {
+                case .connected:
+                    if !self.connectedPeers.contains(peerID) {
+                        self.connectedPeers.append(peerID)
+                        print("Connected to \(peerID.displayName)")
+                    }
+                case .notConnected:
+                    self.connectedPeers.removeAll { $0 == peerID }
+                    print("Disconnected from \(peerID.displayName)")
+                case .connecting:
+                    print("Connecting to \(peerID.displayName)")
+                @unknown default:
+                    print("Unknown state for \(peerID.displayName)")
+                }
             }
         }
-    }
-    // ModelTrainingViewModel.swift (iPhone Version)
 
     func requestModel(modelName: String) {
         if let peerID = connectedPeers.first {
@@ -186,17 +179,44 @@ class ModelTrainingViewModel: NSObject, ObservableObject, MCSessionDelegate, MCN
     }
     
     func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
+        // Handle received data
+        print("Received data from \(peerID.displayName)")
         if let message = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
            let type = message["type"] as? String {
             switch type {
-            case "requestSessionsList":
-                self.sendSessionsList(to: peerID)
+            case "trainingSettingsUpdate":
+                if let parameters = message["parameters"] as? [String: Any],
+                   let newSettings = TrainingSettings(from: parameters) { // Use initializer here
+                    DispatchQueue.main.async {
+                        self.trainingSettings = newSettings
+//                        NotificationCenter.default.post(name: .openTrainingSettings, object: nil)
+                    }
+                }
+            case "startTraining":
+                if let parameters = message["parameters"] as? [String: Any],
+                   let newSettings = TrainingSettings(from: parameters) { // Use initializer here
+                    DispatchQueue.main.async {
+                        self.trainingSettings = newSettings
+                        self.startTraining(withParameters: parameters, from: peerID)
+                    }
+                }
+            case "sessionList":
+                if let sessionsArray = message["sessions"] as? [[String: Any]] {
+                    let receivedSessions = sessionsArray.compactMap { Session.fromDictionary($0) }
+                    DispatchQueue.main.async {
+                        self.sessions = receivedSessions
+                        self.saveSessions()
+                        print("Received and updated sessions from \(peerID.displayName)")
+                    }
+                }
             case "trainingLog":
                 if let log = message["log"] as? String {
                     self.handleReceivedTrainingLog(log)
                 }
             case "trainingCompleted":
-                self.handleTrainingCompleted(message: message)
+                if let bestAccuracy = message["bestAccuracy"] as? Double {
+                    self.handleTrainingCompleted(message: message)
+                }
             case "modelData":
                 if let modelName = message["modelName"] as? String {
                     // Expecting the next data packet to be model data
@@ -241,11 +261,12 @@ class ModelTrainingViewModel: NSObject, ObservableObject, MCSessionDelegate, MCN
     }
     
     // Empty implementations for required delegate methods
-    func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {}
-    
-    func session(_ session: MCSession, didStartReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, with progress: Progress) {}
-    
-    func session(_ session: MCSession, didFinishReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, at localURL: URL?, withError error: Error?) {}
+    func session(_ session: MCSession, didReceive stream: InputStream,
+                 withName streamName: String, fromPeer peerID: MCPeerID) {}
+    func session(_ session: MCSession, didStartReceivingResourceWithName resourceName: String,
+                 fromPeer peerID: MCPeerID, with progress: Progress) {}
+    func session(_ session: MCSession, didFinishReceivingResourceWithName resourceName: String,
+                 fromPeer peerID: MCPeerID, at localURL: URL?, withError error: Error?) {}
     
     // MARK: - MCNearbyServiceBrowserDelegate Methods
     
@@ -262,9 +283,45 @@ class ModelTrainingViewModel: NSObject, ObservableObject, MCSessionDelegate, MCN
         print("Lost peer: \(peerID.displayName)")
     }
     
-    // Helper methods
+    // MARK: - Helper Methods
     
-    func getDocumentsDirectory() -> URL {
+    private func getDocumentsDirectory() -> URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    }
+    
+    private func sendUpdatedSettingsToMac(_ settings: TrainingSettings) {
+        let parameters: [String: Any] = [
+            "windowSizes": settings.windowSizes.map { Int($0 * 50) },
+            "windowSteps": settings.windowSteps.map { Int($0 * 50) },
+            "modelTypes": Array(settings.modelTypes),
+            "preprocessingTypes": Array(settings.preprocessingTypes),
+            "filteringOptions": Array(settings.filteringOptions),
+            "scalerOptions": Array(settings.scalerOptions),
+            "usePCA": settings.usePCA,
+            "includeAcceleration": settings.includeAcceleration,
+            "includeRotationRate": settings.includeRotationRate,
+            "isAutomatic": settings.isAutomatic,
+            "maxTrainingTime": settings.maxTrainingTime,
+            "selectedSessionIDs": settings.selectedSessionIDs.map { $0.uuidString }
+        ]
+        
+        if let peerID = connectedPeers.first {
+            let message: [String: Any] = ["type": "trainingSettingsUpdate", "parameters": parameters]
+            sendMessage(message: message, to: peerID)
+            print("Sent training settings to \(peerID.displayName)")
+        }
+    }
+
+    func startTraining(withParameters parameters: [String: Any], from peerID: MCPeerID) {
+        // Set training in progress to true and clear logs
+        trainingInProgress = true
+        trainingLogs = ""
+
+        // Send training request to connected Mac (if any)
+        if let peerID = connectedPeers.first {
+            let message: [String: Any] = ["type": "startTraining", "parameters": parameters]
+            sendMessage(message: message, to: peerID)
+            print("Sent start training request to \(peerID.displayName)")
+        }
     }
 }

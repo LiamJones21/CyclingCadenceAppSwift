@@ -415,17 +415,3 @@ struct MultipleSelectionRow: View {
         .padding(.vertical, 20)
     }
 }
-struct TrainingSettings: Equatable {
-    var windowSizes: [Double]
-    var windowSteps: [Double]
-    var modelTypes: Set<String>
-    var preprocessingTypes: Set<String>
-    var filteringOptions: Set<String>
-    var scalerOptions: Set<String>
-    var usePCA: Bool
-    var includeAcceleration: Bool
-    var includeRotationRate: Bool
-    var isAutomatic: Bool
-    var maxTrainingTime: Double
-    var selectedSessionIDs: [UUID]
-}

@@ -12,6 +12,7 @@ import WatchConnectivity
 import Combine
 import CreateML
 import CoreML
+import MultipeerConnectivity
 
 // MARK: - Activity Log Entry
 struct ActivityLogEntry: Identifiable, Codable {
@@ -56,7 +57,9 @@ struct PredictionResult: Codable, Identifiable {
     var speed: Double
 }
 
-class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, WCSessionDelegate {
+class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, WCSessionDelegate, MCSessionDelegate, MCNearbyServiceBrowserDelegate {
+    
+    
     // MARK: - Published Properties
     @Published var currentSpeed: Double = 0.0 // Speed in m/s
     @Published var currentGear: Int = 1 {
@@ -128,6 +131,20 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
     @Published var predictionResult: PredictionResult?
     @Published var models: [ModelConfig] = []
     @Published var selectedModelIndex: Int?
+    
+    private let serviceType = "cyclingtrainer" // Ensure this matches the Mac's serviceType
+    private let myPeerID = MCPeerID(displayName: UIDevice.current.name)
+    private var session: MCSession!
+    private var browser: MCNearbyServiceBrowser!
+
+    // Initialize MultipeerConnectivity
+    func setupMultipeerConnectivity() {
+        session = MCSession(peer: myPeerID, securityIdentity: nil, encryptionPreference: .optional)
+        session.delegate = self
+        browser = MCNearbyServiceBrowser(peer: myPeerID, serviceType: serviceType)
+        browser.delegate = self
+        browser.startBrowsingForPeers()
+    }
 
     // MARK: - Setup Methods
     func setup() {
@@ -138,6 +155,7 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
         loadSettings()
         loadModels()
         loadActivityLogFromFile()
+        setupMultipeerConnectivity()
         NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: UIApplication.willResignActiveNotification, object: nil)
     }
 
@@ -185,6 +203,7 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
                 let fileURLs = try fileManager.contentsOfDirectory(at: documentsURL, includingPropertiesForKeys: nil)
                 for url in fileURLs {
                     if url.pathExtension == "mlmodel" {
+                        let id = UUID()
                         let modelName = url.deletingPathExtension().lastPathComponent
                         let configURL = url.deletingPathExtension().appendingPathExtension("json")
                         if fileManager.fileExists(atPath: configURL.path) {
@@ -192,7 +211,7 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
                                 let configData = try Data(contentsOf: configURL)
                                 let decoder = JSONDecoder()
                                 let config = try decoder.decode(ModelConfig.Config.self, from: configData)
-                                let modelConfig = ModelConfig(name: modelName, config: config)
+                                let modelConfig = ModelConfig(id: id, name: modelName, config: config)
                                 models.append(modelConfig)
                             } catch {
                                 print("Error loading model config: \(error.localizedDescription)")
@@ -353,6 +372,7 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
         }
     // MARK: - Model Management
         func addModel(from url: URL) {
+            
             // Get model name
             let modelName = url.deletingPathExtension().lastPathComponent
 
@@ -362,7 +382,7 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
                 let configData = try Data(contentsOf: configURL)
                 let decoder = JSONDecoder()
                 let config = try decoder.decode(ModelConfig.Config.self, from: configData)
-                let newModel = ModelConfig(name: modelName, config: config)
+                let newModel = ModelConfig(id: UUID(), name: modelName, config: config)
                 models.append(newModel)
                 // Save models if needed
             } catch {
@@ -971,6 +991,35 @@ class CyclingViewModel: NSObject, ObservableObject, CLLocationManagerDelegate, W
 
         return mergedData
     }
+    func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
+        print("Failed to start browsing: \(error.localizedDescription)")
+    }
+
+    func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
+        print("Found peer: \(peerID.displayName)")
+        browser.invitePeer(peerID, to: session, withContext: nil, timeout: 30)
+    }
+
+    func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
+        print("Lost peer: \(peerID.displayName)")
+    }
+    // Implement the required MCSessionDelegate methods here
+
+    func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
+        // Handle peer connection state changes
+    }
+
+    func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
+        // Handle received data
+    }
+
+    // Other required methods
+    func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {}
+
+    func session(_ session: MCSession, didStartReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, with progress: Progress) {}
+
+    func session(_ session: MCSession, didFinishReceivingResourceWithName resourceName: String,
+                 fromPeer peerID: MCPeerID, at localURL: URL?, withError error: Error?) {}
 }
 // MARK: - Session Extension for Date Formatting
 extension Session {

@@ -5,8 +5,7 @@
 //  Created by Jones, Liam on 11/7/24.
 //
 
-// Views/ModelsView.swift
-
+// ModelsView.swift
 import SwiftUI
 
 struct ModelsView: View {
@@ -21,8 +20,16 @@ struct ModelsView: View {
             List {
                 Section(header: Text("Local Models")) {
                     ForEach(viewModel.models) { model in
-                        NavigationLink(destination: ModelDetailView(model: model)) {
+                        HStack {
                             Text(model.name)
+                            Spacer()
+                            Button(action: {
+                                // Send model to phone
+                                sendModelToPhone(model)
+                            }) {
+                                Image(systemName: "square.and.arrow.up")
+                                    .foregroundColor(.blue)
+                            }
                         }
                     }
                 }
@@ -33,8 +40,12 @@ struct ModelsView: View {
                             HStack {
                                 Text(model.name)
                                 Spacer()
-                                Button("Download") {
-                                    downloadModel(model)
+                                Button(action: {
+                                    // Request model from phone
+                                    requestModelFromPhone(model)
+                                }) {
+                                    Image(systemName: "square.and.arrow.down")
+                                        .foregroundColor(.green)
                                 }
                             }
                         }
@@ -42,14 +53,31 @@ struct ModelsView: View {
                 }
             }
             .listStyle(SidebarListStyle())
+            .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    Button(action: {
+                        viewModel.requestModelsFromPhone()
+                    }) {
+                        Label("Refresh Phone Models", systemImage: "arrow.clockwise")
+                    }
+                }
+            }
         }
         .padding()
     }
 
-    func downloadModel(_ model: ModelConfig) {
-        // Request the model data from the phone
+    func sendModelToPhone(_ model: ModelConfig) {
+        // Implement sending model to phone
         if let peerID = viewModel.connectedPeers.first {
-            viewModel.requestModel(modelName: model.name)
+            viewModel.sendModel(model: model, to: peerID)
+        }
+    }
+
+    func requestModelFromPhone(_ model: ModelConfig) {
+        // Implement requesting model from phone
+        if let peerID = viewModel.connectedPeers.first {
+            let message: [String: Any] = ["type": "requestModel", "modelName": model.name]
+            viewModel.sendMessage(message: message, to: peerID)
         }
     }
 }

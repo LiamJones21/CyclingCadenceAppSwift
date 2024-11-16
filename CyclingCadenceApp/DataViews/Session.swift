@@ -10,10 +10,18 @@ import Foundation
 import Foundation
 
 struct Session: Identifiable, Codable {
-    var id = UUID()
+    var id: UUID // Ensure 'id' is not optional and has no default value
     var date: Date
     var data: [CyclingData]
-    var name: String? // Added name property
+    var name: String?
+
+//         You may include an initializer if needed
+     init(id: UUID = UUID(), date: Date, data: [CyclingData], name: String? = nil) {
+         self.id = id
+         self.date = date
+         self.data = data
+         self.name = name
+     }
 
     var displayName: String {
         name ?? dateFormatted
@@ -21,23 +29,32 @@ struct Session: Identifiable, Codable {
    
         
     func toDictionary() -> [String: Any] {
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        if let data = try? encoder.encode(self),
-           let dict = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-            return dict
+            return [
+                "id": id.uuidString,
+                "name": name,
+                "date": date.iso8601,
+                "data": data.map { $0.toDictionary() }
+            ]
         }
-        return [:]
+
+        static func fromDictionary(_ dict: [String: Any]) -> Session? {
+            guard let idString = dict["id"] as? String,
+                  let id = UUID(uuidString: idString),
+                  let name = dict["name"] as? String,
+                  let dateString = dict["date"] as? String,
+                  let date = ISO8601DateFormatter().date(from: dateString),
+                  let dataArray = dict["data"] as? [[String: Any]] else {
+                return nil
+            }
+
+            let data = dataArray.compactMap { CyclingData.fromDictionary($0) }
+            // Corrected parameter order
+            return Session(id: id, date: date, data: data, name: name)
+        }
     }
-    
-    static func fromDictionary(_ dict: [String: Any]) -> Session? {
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        if let data = try? JSONSerialization.data(withJSONObject: dict, options: []),
-           let session = try? decoder.decode(Session.self, from: data) {
-            return session
-        }
-        return nil
+
+extension Date {
+    var iso8601: String {
+        return ISO8601DateFormatter().string(from: self)
     }
 }
-

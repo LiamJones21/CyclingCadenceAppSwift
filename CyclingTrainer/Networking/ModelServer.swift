@@ -1,17 +1,15 @@
 //
-//  ModelServer.swift
-//  CyclingCadenceApp
+// ModelServer.swift
+// CyclingCadenceApp
 //
-//  Created by Jones, Liam on 11/6/24.
-//
-
+// Created by Jones, Liam on 11/6/24.
 
 import Foundation
 import MultipeerConnectivity
 import CoreML
 
 class ModelServer: NSObject, MCSessionDelegate, MCNearbyServiceAdvertiserDelegate {
-    private let serviceType = "cycling-model"
+    private let serviceType = "cyclingtrainer"
     private let peerID = MCPeerID(displayName: Host.current().localizedName ?? "Mac")
     private var session: MCSession!
     private var advertiser: MCNearbyServiceAdvertiser!
@@ -20,7 +18,7 @@ class ModelServer: NSObject, MCSessionDelegate, MCNearbyServiceAdvertiserDelegat
     init(viewModel: ModelTrainingViewModel) {
         self.viewModel = viewModel
         super.init()
-        session = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .required)
+        session = MCSession(peer: peerID, securityIdentity: nil, encryptionPreference: .optional)
         session.delegate = self
         advertiser = MCNearbyServiceAdvertiser(peer: peerID, discoveryInfo: nil, serviceType: serviceType)
         advertiser.delegate = self
@@ -74,8 +72,6 @@ class ModelServer: NSObject, MCSessionDelegate, MCNearbyServiceAdvertiserDelegat
         // Handle data received from iOS app if needed
     }
 
-    // Other required delegate methods with empty implementations
-
     func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) {}
     func session(_ session: MCSession, didStartReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, with progress: Progress) {}
     func session(_ session: MCSession, didFinishReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, at localURL: URL?, withError error: Error?) {}
@@ -87,6 +83,7 @@ class ModelServer: NSObject, MCSessionDelegate, MCNearbyServiceAdvertiserDelegat
     }
 
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
+        print("Received invitation from \(peerID.displayName)")
         invitationHandler(true, session)
     }
 }
