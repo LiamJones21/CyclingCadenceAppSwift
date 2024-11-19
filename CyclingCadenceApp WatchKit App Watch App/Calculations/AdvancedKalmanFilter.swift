@@ -1,78 +1,59 @@
 //
-//  KalmanFilter.swift
+//
+//
+//  AdvancedKalmanFilter.swift
 //  CyclingCadenceApp
 //
 //  Created by Jones, Liam on 11/1/24.
-//
-// AdvancedKalmanFilter.swift
 
 import Foundation
 
 class AdvancedKalmanFilter {
     private var x: Double = 0.0 // Estimated speed
     private var P: Double = 1.0 // Estimate error covariance
-    var processNoise: Double = 0.1 // Process noise covariance (Q)
-    var measurementNoise: Double = 0.1 // Base measurement noise covariance (R)
-    var gpsAccuracyLowerBound: Double = 5.0 // Lower bound
-    var gpsAccuracyUpperBound: Double = 20.0 // Upper bound
+    var processNoise: Double = 0.1 // Base process noise covariance (Q)
+    var measurementNoise: Double = 0.1 // Measurement noise covariance (R)
 
-    private var lastGPSUpdateTime: TimeInterval?
-
+//    func predict(acceleration: Double, deltaTime: Double, accelerationVariance: Double) {
+//        // Adaptive friction coefficient based on acceleration variance
+//        let minFriction = 0.1   // Minimum friction when variance is high (device is moving)
+//        let maxFriction = 0.5   // Maximum friction when variance is low (device is stationary)
+//        let k = 1.0             // Tuning parameter for sensitivity
+//
+//        // Compute friction coefficient using an inverse relationship
+//        // Friction increases when variance decreases, and vice versa
+//        let frictionCoefficient = minFriction + (maxFriction - minFriction) * exp(-k * accelerationVariance)
+//
+//        // Ensure friction coefficient is always greater than zero
+//        let friction = -frictionCoefficient * x
+//
+//        // Predict the next state
+//        x += (acceleration + friction) * deltaTime
+//        P += processNoise
+//
+//        // Ensure speed is not negative
+//        x = max(0.0, x)
+//    }
     func predict(acceleration: Double, deltaTime: Double) {
-        x += acceleration * deltaTime
-        P += processNoise
+            x += acceleration * deltaTime
+            P += processNoise
 
-        // Increase process noise over time if no GPS update
-        if let lastGPSUpdateTime = lastGPSUpdateTime {
-            let timeSinceLastGPS = Date().timeIntervalSince1970 - lastGPSUpdateTime
-            if timeSinceLastGPS > 1.0 {
-                processNoise = min(processNoise + 0.01, 10.0)
-            }
-        } else {
-            processNoise = min(processNoise + 0.01, 10.0)
-        }
-    }
-
-    func updateWithGPS(speedMeasurement: Double, gpsAccuracy: Double) {
-        // Calculate weighting based on GPS accuracy
-        let weighting: Double
-        if gpsAccuracy <= gpsAccuracyLowerBound {
-            weighting = 1.0 // Fully trust GPS
-        } else if gpsAccuracy >= gpsAccuracyUpperBound {
-            weighting = 0.0 // Ignore GPS
-        } else {
-            weighting = 1.0 - (gpsAccuracy - gpsAccuracyLowerBound) / (gpsAccuracyUpperBound - gpsAccuracyLowerBound)
+            // Ensure speed remains non-negative
+            x = max(0.0, x)
         }
 
-        // Adjust measurement noise R
-        let R: Double
-        if weighting > 0 {
-            R = measurementNoise / weighting
-        } else {
-            R = Double.greatestFiniteMagnitude // Effectively ignore GPS
-        }
-
+    func updateWithGPS(speedMeasurement: Double) {
         // Kalman gain
-        let K = P / (P + R)
-        // State update
+        let K = P / (P + measurementNoise)
+
+        // Update estimate with measurement
         x += K * (speedMeasurement - x)
-        // Covariance update
+
+        // Update error covariance
         P *= (1 - K)
 
-        // Reset process noise if GPS is reliable
-        if gpsAccuracy <= gpsAccuracyLowerBound {
-            processNoise = 0.1
-        }
-
-        // Update last GPS update time
-        lastGPSUpdateTime = Date().timeIntervalSince1970
-    }
-
-    func reset() {
-        x = 0.0
-        P = 1.0
-        processNoise = 0.1
-        lastGPSUpdateTime = nil
+        // Ensure speed is not negative
+        x = max(0.0, x)
     }
 
     var estimatedSpeed: Double {

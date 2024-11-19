@@ -14,6 +14,18 @@ struct ContentView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 5) {
+                HStack {
+                    Text("GPS: \(viewModel.GPSSpeedEstimate)m/s")
+                        .font(.system(size: 10))
+                        .foregroundColor(.gray)
+
+                    Divider()
+
+                    Text("Acc: \(viewModel.GPSSpeedEstimateAccuracy)m")
+                        .font(.system(size: 10))
+                        .foregroundColor(.gray)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
                 // Center-aligned session duration
                 HStack {
                     Text(viewModel.sessionDuration)

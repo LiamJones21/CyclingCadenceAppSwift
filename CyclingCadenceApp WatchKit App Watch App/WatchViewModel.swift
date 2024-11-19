@@ -18,6 +18,8 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
     // MARK: - Published Properties
     @Published var isRecording = false
     @Published var currentSpeed: Double = 0.0
+    @Published var GPSSpeedEstimate: String = "0.000"
+    @Published var GPSSpeedEstimateAccuracy: String = "0.000"
     @Published var currentGear: Int = 0
     @Published var currentTerrain: String = "Road"
     @Published var currentCadence: Double = 0.0
@@ -29,6 +31,7 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
     @Published var sessionActive: Bool = false
     @Published var accelerometerData: CMDeviceMotion?
     @Published var accelerometerDataSaved: CMAccelerometerData?
+        
 
     
     @Published var isPredicting: Bool = false
@@ -145,8 +148,8 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
             speedCalculator.lowPassFilterAlpha = lowPassFilterAlpha
             speedCalculator.kalmanProcessNoise = kalmanProcessNoise
             speedCalculator.kalmanMeasurementNoise = kalmanMeasurementNoise
-            speedCalculator.gpsAccuracyLowerBound = gpsAccuracyLowerBound
-            speedCalculator.gpsAccuracyUpperBound = gpsAccuracyUpperBound
+//            speedCalculator.gpsAccuracyLowerBound = gpsAccuracyLowerBound
+//            speedCalculator.gpsAccuracyUpperBound = gpsAccuracyUpperBound
         }
 
         // Observe changes to settings and update SpeedCalculator
@@ -323,6 +326,10 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
             DispatchQueue.main.async {
                 self.currentSpeed = self.speedCalculator.currentSpeed
             }
+            DispatchQueue.main.async {
+                self.GPSSpeedEstimate = String(format: "%.3f", self.speedCalculator.GPSSpeedEstimate)
+                self.GPSSpeedEstimateAccuracy = String(format: "%.3f", self.speedCalculator.GPSSpeedEstimateAccuracy)
+            }
 
             // Continue to estimate cadence
             DispatchQueue.main.async {
@@ -344,7 +351,7 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
                 }
 
                 // Batch sending logic
-                if dataCollector.getUnsentData().count >= 200 {
+                if dataCollector.getUnsentData().count >= 600 {
                     sendDataToPhone()
                 }
             }
