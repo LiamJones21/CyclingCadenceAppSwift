@@ -1,56 +1,36 @@
 //
 //
 //
+//
 //  SpeedCalculator.swift
 //  CyclingCadenceApp
 //
 //  Created by Jones, Liam on 11/3/24.
+//
 
 import Foundation
 import CoreMotion
 import CoreLocation
 
-class SpeedCalculator {
-    // Settings
-    var useAccelerometer: Bool = true
-    var useGPS: Bool = true
+class SpeedCalculator: NSObject, CLLocationManagerDelegate {
+    // MARK: - Properties
+    private var motionManager = CMMotionManager()
+    private var locationManager = CLLocationManager()
 
-    // Accelerometer settings
-    var accelerometerTuningValue: Double = 1.0
-    var accelerometerWeightingX: Double = 1.0
-    var accelerometerWeightingY: Double = 1.0
-    var accelerometerWeightingZ: Double = 1.0
-    var useLowPassFilter: Bool = false
-    var lowPassFilterAlpha: Double = 0.1
-
-    // Kalman filter settings
-    var baseProcessNoise: Double = 0.1
-    var baseMeasurementNoise: Double = 0.1
-
-    // Adaptive friction settings
-    private var accelerationHistory: [Double] = []
-    private let accelerationHistorySize = 20 // Number of samples to consider
-
-    private var kalmanFilter: AdvancedKalmanFilter?
     private var lastUpdateTime: TimeInterval = Date().timeIntervalSince1970
-    var currentSpeed: Double = 0.0
-    private var isSessionActive: Bool = true
+    private var isSessionActive: Bool = false
 
-    // For low-pass filter
-    private var filteredAccelX: Double = 0.0
-    private var filteredAccelY: Double = 0.0
-    private var filteredAccelZ: Double = 0.0
-
-    // Variables to store accelerometer offsets
+    // Accelerometer offsets
     public var accelOffsetX: Double = 0.0
     public var accelOffsetY: Double = 0.0
     public var accelOffsetZ: Double = 0.0
 
-    // Variables to store rotation rate offsets
+    // Rotation rate offsets
     public var rotationOffsetX: Double = 0.0
     public var rotationOffsetY: Double = 0.0
     public var rotationOffsetZ: Double = 0.0
 
+    // Offset calculation variables
     private var offsetSamplingStartTime: TimeInterval?
     private var offsetsCalculated = false
 
@@ -58,24 +38,65 @@ class SpeedCalculator {
     private var offsetSamplesAccelY: [Double] = []
     private var offsetSamplesAccelZ: [Double] = []
 
-    // Variables to store rotation rate offset samples
     private var offsetSamplesRotationX: [Double] = []
     private var offsetSamplesRotationY: [Double] = []
     private var offsetSamplesRotationZ: [Double] = []
 
-    public var GPSSpeedEstimate: Double = 0.0
+    private var lastOffsetCalculationTime: TimeInterval = 0.0
+    private var isRecalculatingOffsets: Bool = false
+
+    // Speed calculation variables
+    private var filteredAcceleration: Double = 0.0
+    private var sensorSpeed: Double = 0.0
+    public var gpsSpeed: Double = 0.0
+    public var currentSpeed: Double = 0.0 // Publicly accessible speed
+
+    // Kalman filter variables
+    private var kalmanSpeed: Double = 0.0
+    private var kalmanErrorCovariance: Double = 1.0
+
+    // Movement confidence variables
+    private var lowConfidenceStartTime: TimeInterval?
+    private let lowConfidenceDurationThreshold: TimeInterval = 5.0 // Adjust as needed
+
+    // MARK: - Configurable Properties (Settings)
+    // These properties can be set from the WatchViewModel
+    public var useAccelerometer: Bool = true
+    public var useGPS: Bool = true
+
+    public var accelerometerTuningValue: Double = 1.0
+    public var accelerometerWeightingX: Double = 1.0
+    public var accelerometerWeightingY: Double = 1.0
+    public var accelerometerWeightingZ: Double = 1.0
+
+    public var useLowPassFilter: Bool = false
+    public var lowPassFilterAlpha: Double = 0.1
+
+    public var kalmanProcessNoise: Double = 1e-3
+    public var kalmanMeasurementNoise: Double = 1e-1
+    public var gpsAccuracyLowerBound: Double = 5.0
+    public var gpsAccuracyUpperBound: Double = 20.0
+    
     public var GPSSpeedEstimateAccuracy: Double = 0.0
     
-    public var kalmanProcessNoise: Double = 0.1
-    public var kalmanMeasurementNoise: Double = 0.1
-    
-    private var previousVelocityX: Double = 0.0
-    private var previousVelocityY: Double = 0.0
-    private var previousVelocityZ: Double = 0.0
-    
+    // Hybrid Speed Calculation
+    private var lastUpdateTime1: TimeInterval = Date().timeIntervalSince1970
+    // Low-pass filter for accelerometer data
+    private var filteredAcceleration1: Double = 0.0
+    private let filterFactor: Double = 0.1
+    private var hybridSpeed: Double {
+        let gpsSpeedAvailable = gpsSpeed > 0.5 // Threshold for considering GPS speed reliable (0.5 m/s)
+        let gpsWeight: Double = gpsSpeedAvailable ? 0.8 : 0.0
+        let sensorWeight: Double = gpsSpeedAvailable ? 0.2 : 1.0
+        return (gpsSpeed * gpsWeight) + (sensorSpeed * sensorWeight) + 1.75
+    }
 
     // MARK: - Session Control
     func reset() {
+        sensorSpeed = 0.0
+        gpsSpeed = 0.0
+        kalmanSpeed = 0.0
+        kalmanErrorCovariance = 1.0
         currentSpeed = 0.0
         lastUpdateTime = Date().timeIntervalSince1970
         isSessionActive = true
@@ -88,6 +109,8 @@ class SpeedCalculator {
         rotationOffsetY = 0.0
         rotationOffsetZ = 0.0
         offsetsCalculated = false
+        lastOffsetCalculationTime = 0.0
+        isRecalculatingOffsets = false
         offsetSamplingStartTime = nil
 
         // Clear samples
@@ -97,403 +120,217 @@ class SpeedCalculator {
         offsetSamplesRotationX.removeAll()
         offsetSamplesRotationY.removeAll()
         offsetSamplesRotationZ.removeAll()
-        accelerationHistory.removeAll()
+
+        // Reset sensor variables
+        filteredAcceleration = 0.0
     }
 
     func stopSession() {
         isSessionActive = false
+        motionManager.stopDeviceMotionUpdates()
+        locationManager.stopUpdatingLocation()
     }
 
-//    func processDeviceMotionData(_ data: CMDeviceMotion) {
-//        let currentTime = Date().timeIntervalSince1970
-//        var deltaTime = currentTime - lastUpdateTime
-//        // Ensure deltaTime is reasonable
-//        if deltaTime <= 0 || deltaTime > 1 {
-//            deltaTime = 0.01 // Assign a default value if deltaTime is invalid
-//        }
-//        lastUpdateTime = currentTime
-//
-//        // Offset Calibration
-//        if !offsetsCalculated {
-//            if offsetSamplingStartTime == nil {
-//                offsetSamplingStartTime = currentTime
-//            }
-//
-//            // Collect accelerometer samples
-//            offsetSamplesAccelX.append(data.userAcceleration.x)
-//            offsetSamplesAccelY.append(data.userAcceleration.y)
-//            offsetSamplesAccelZ.append(data.userAcceleration.z)
-//
-//            // Collect rotation rate samples
-//            offsetSamplesRotationX.append(data.rotationRate.x)
-//            offsetSamplesRotationY.append(data.rotationRate.y)
-//            offsetSamplesRotationZ.append(data.rotationRate.z)
-//
-//            // Calculate current average accelerometer offsets
-//            accelOffsetX = offsetSamplesAccelX.reduce(0, +) / Double(offsetSamplesAccelX.count)
-//            accelOffsetY = offsetSamplesAccelY.reduce(0, +) / Double(offsetSamplesAccelY.count)
-//            accelOffsetZ = offsetSamplesAccelZ.reduce(0, +) / Double(offsetSamplesAccelZ.count)
-//
-//            // Calculate current average rotation rate offsets
-//            rotationOffsetX = offsetSamplesRotationX.reduce(0, +) / Double(offsetSamplesRotationX.count)
-//            rotationOffsetY = offsetSamplesRotationY.reduce(0, +) / Double(offsetSamplesRotationY.count)
-//            rotationOffsetZ = offsetSamplesRotationZ.reduce(0, +) / Double(offsetSamplesRotationZ.count)
-//
-//            // After 2 seconds, set offsetsCalculated to true
-//            if currentTime - offsetSamplingStartTime! >= 2.0 {
-//                offsetsCalculated = true
-//                offsetSamplingStartTime = nil
-//
-//                print("Calculated accelerometer offsets:")
-//                print("Accel X: \(accelOffsetX), Y: \(accelOffsetY), Z: \(accelOffsetZ)")
-//
-//                print("Calculated rotation rate offsets:")
-//                print("Rotation X: \(rotationOffsetX), Y: \(rotationOffsetY), Z: \(rotationOffsetZ)")
-//            }
-//        }
-//
-//        // Proceed with speed calculation using adjusted values
-//        let adjustedAccelX = data.userAcceleration.x - accelOffsetX
-//        let adjustedAccelY = data.userAcceleration.y - accelOffsetY
-//        let adjustedAccelZ = data.userAcceleration.z - accelOffsetZ
-//
-//        // Adjusted rotation rates (accessible for other scripts)
-//        let adjustedRotationRateX = data.rotationRate.x - rotationOffsetX
-//        let adjustedRotationRateY = data.rotationRate.y - rotationOffsetY
-//        let adjustedRotationRateZ = data.rotationRate.z - rotationOffsetZ
-//
-//        // Apply low-pass filter if enabled
-//        var accelX = adjustedAccelX
-//        var accelY = adjustedAccelY
-//        var accelZ = adjustedAccelZ
-//
-//        if useLowPassFilter {
-//            filteredAccelX = lowPassFilterAlpha * adjustedAccelX + (1 - lowPassFilterAlpha) * filteredAccelX
-//            filteredAccelY = lowPassFilterAlpha * adjustedAccelY + (1 - lowPassFilterAlpha) * filteredAccelY
-//            filteredAccelZ = lowPassFilterAlpha * adjustedAccelZ + (1 - lowPassFilterAlpha) * filteredAccelZ
-//
-//            accelX = filteredAccelX
-//            accelY = filteredAccelY
-//            accelZ = filteredAccelZ
-//        }
-//
-//        // Apply direction weightings
-//        accelX *= accelerometerWeightingX
-//        accelY *= accelerometerWeightingY
-//        accelZ *= accelerometerWeightingZ
-//
-//        // Compute the magnitude of acceleration
-//        let accelerationMagnitude = sqrt(accelX * accelX + accelY * accelY + accelZ * accelZ)
-//
-//        // Update acceleration history
-//        accelerationHistory.append(accelerationMagnitude)
-//        if accelerationHistory.count > accelerationHistorySize {
-//            accelerationHistory.removeFirst()
-//        }
-//
-//        // Calculate variance over the time window
-//        let accelerationVariance = variance(of: accelerationHistory)
-//
-//        // Initialize Kalman Filter if necessary
-//        if kalmanFilter == nil {
-//            kalmanFilter = AdvancedKalmanFilter()
-//        }
-//
-//        // Predict step with adaptive friction
-//        kalmanFilter?.processNoise = kalmanProcessNoise
-//        kalmanFilter?.predict(acceleration: accelerationMagnitude, deltaTime: deltaTime, accelerationVariance: accelerationVariance)
-//
-//        // Update current speed estimate
-//        if let estimatedSpeed = kalmanFilter?.estimatedSpeed {
-//            currentSpeed = max(0, estimatedSpeed)
-//        }
-//    }
-    // Add these variables to track estimated velocity
-//    private var estimatedVelocityX: Double = 0.0
-//    private var estimatedVelocityY: Double = 0.0
-//    private var estimatedVelocityZ: Double = 0.0
-//
-//    func processDeviceMotionData(_ data: CMDeviceMotion) {
-//        let currentTime = Date().timeIntervalSince1970
-//        var deltaTime = currentTime - lastUpdateTime
-//        // Ensure deltaTime is reasonable
-//        if deltaTime <= 0 || deltaTime > 1 {
-//            deltaTime = 0.01 // Assign a default value if deltaTime is invalid
-//        }
-//        lastUpdateTime = currentTime
-//
-//        // Offset Calibration
-//        if !offsetsCalculated {
-//            if offsetSamplingStartTime == nil {
-//                offsetSamplingStartTime = currentTime
-//            }
-//
-//            // Collect accelerometer samples
-//            offsetSamplesAccelX.append(data.userAcceleration.x)
-//            offsetSamplesAccelY.append(data.userAcceleration.y)
-//            offsetSamplesAccelZ.append(data.userAcceleration.z)
-//
-//            // Collect rotation rate samples
-//            offsetSamplesRotationX.append(data.rotationRate.x)
-//            offsetSamplesRotationY.append(data.rotationRate.y)
-//            offsetSamplesRotationZ.append(data.rotationRate.z)
-//
-//            // Calculate current average accelerometer offsets
-//            accelOffsetX = offsetSamplesAccelX.reduce(0, +) / Double(offsetSamplesAccelX.count)
-//            accelOffsetY = offsetSamplesAccelY.reduce(0, +) / Double(offsetSamplesAccelY.count)
-//            accelOffsetZ = offsetSamplesAccelZ.reduce(0, +) / Double(offsetSamplesAccelZ.count)
-//
-//            // Calculate current average rotation rate offsets
-//            rotationOffsetX = offsetSamplesRotationX.reduce(0, +) / Double(offsetSamplesRotationX.count)
-//            rotationOffsetY = offsetSamplesRotationY.reduce(0, +) / Double(offsetSamplesRotationY.count)
-//            rotationOffsetZ = offsetSamplesRotationZ.reduce(0, +) / Double(offsetSamplesRotationZ.count)
-//
-//            // After 2 seconds, set offsetsCalculated to true
-//            if currentTime - offsetSamplingStartTime! >= 2.0 {
-//                offsetsCalculated = true
-//                offsetSamplingStartTime = nil
-//
-//                print("Calculated accelerometer offsets:")
-//                print("Accel X: \(accelOffsetX), Y: \(accelOffsetY), Z: \(accelOffsetZ)")
-//
-//                print("Calculated rotation rate offsets:")
-//                print("Rotation X: \(rotationOffsetX), Y: \(rotationOffsetY), Z: \(rotationOffsetZ)")
-//            }
-//        }
-//
-//        // Proceed with speed calculation using adjusted values
-//        let adjustedAccelX = data.userAcceleration.x - accelOffsetX
-//        let adjustedAccelY = data.userAcceleration.y - accelOffsetY
-//        let adjustedAccelZ = data.userAcceleration.z - accelOffsetZ
-//
-//        // Adjusted rotation rates (accessible for other scripts)
-//        let adjustedRotationRateX = data.rotationRate.x - rotationOffsetX
-//        let adjustedRotationRateY = data.rotationRate.y - rotationOffsetY
-//        let adjustedRotationRateZ = data.rotationRate.z - rotationOffsetZ
-//
-//        // Apply low-pass filter if enabled
-//        var accelX = adjustedAccelX
-//        var accelY = adjustedAccelY
-//        var accelZ = adjustedAccelZ
-//
-//        if useLowPassFilter {
-//            filteredAccelX = lowPassFilterAlpha * adjustedAccelX + (1 - lowPassFilterAlpha) * filteredAccelX
-//            filteredAccelY = lowPassFilterAlpha * adjustedAccelY + (1 - lowPassFilterAlpha) * filteredAccelY
-//            filteredAccelZ = lowPassFilterAlpha * adjustedAccelZ + (1 - lowPassFilterAlpha) * filteredAccelZ
-//
-//            accelX = filteredAccelX
-//            accelY = filteredAccelY
-//            accelZ = filteredAccelZ
-//        }
-//
-//        // Apply direction weightings
-//        accelX *= accelerometerWeightingX
-//        accelY *= accelerometerWeightingY
-//        accelZ *= accelerometerWeightingZ
-//
-//        // Compute the magnitude of acceleration
-//        let accelerationMagnitude = sqrt(accelX * accelX + accelY * accelY + accelZ * accelZ)
-//
-//        // Update acceleration history
-//        accelerationHistory.append(accelerationMagnitude)
-//        if accelerationHistory.count > accelerationHistorySize {
-//            accelerationHistory.removeFirst()
-//        }
-//
-//        // Calculate variance over the time window
-//        let accelerationVariance = variance(of: accelerationHistory)
-//
-//        // Compute adaptive friction
-//        let minFriction = 0.05
-//        let maxFriction = 0.3
-//        let k = 5.0
-//        let frictionCoefficient = minFriction + (maxFriction - minFriction) * (1 - exp(-k * accelerationVariance))
-//        let friction = -frictionCoefficient * currentSpeed
-//
-//        // Compute net acceleration with friction
-//        let netAcceleration = accelerationMagnitude + friction
-//
-//        // Update speed using Kalman Filter
-//        if kalmanFilter == nil {
-//            kalmanFilter = AdvancedKalmanFilter()
-//        }
-//        kalmanFilter?.processNoise = kalmanProcessNoise
-//        kalmanFilter?.predict(acceleration: netAcceleration, deltaTime: deltaTime)
-//
-//        // Update current speed estimate
-//        if let estimatedSpeed = kalmanFilter?.estimatedSpeed {
-//            currentSpeed = max(0.0, estimatedSpeed)
-//        }
-//    }
-    private var estimatedVelocityX: Double = 0.0
-    private var estimatedVelocityY: Double = 0.0
-    private var estimatedVelocityZ: Double = 0.0
+    func startSession() {
+        reset()
+        startMotionUpdates()
+        startLocationUpdates()
+    }
 
-    func processDeviceMotionData(_ data: CMDeviceMotion) {
-        let currentTime = Date().timeIntervalSince1970
-        var deltaTime = currentTime - lastUpdateTime
-        // Ensure deltaTime is reasonable
-        if deltaTime <= 0 || deltaTime > 1 {
-            deltaTime = 0.01 // Assign a default value if deltaTime is invalid
+    // MARK: - Motion Updates
+    private func startMotionUpdates() {
+        if motionManager.isDeviceMotionAvailable {
+            motionManager.deviceMotionUpdateInterval = 1.0 / 50.0 // 50 Hz
+            motionManager.startDeviceMotionUpdates()
         }
+    }
+
+    // MARK: - Location Updates
+    private func startLocationUpdates() {
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.activityType = .fitness
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.startUpdatingLocation()
+    }
+
+    // MARK: - Process Device Motion Data
+    func processDeviceMotionData(_ data: CMDeviceMotion) {
+        calculateSpeed(accelData: data.userAcceleration)
+        let currentTime = Date().timeIntervalSince1970
+        let deltaTime = currentTime - lastUpdateTime
         lastUpdateTime = currentTime
-        
-        // Offset Calibration
-        if !offsetsCalculated {
-            if offsetSamplingStartTime == nil {
-                offsetSamplingStartTime = currentTime
-            }
-            
-            // Collect accelerometer samples
+
+        // Check if we need to recalculate offsets
+        if !offsetsCalculated || (currentTime - lastOffsetCalculationTime >= 10.0 && !isRecalculatingOffsets) {
+            // Start recalculating offsets
+            isRecalculatingOffsets = true
+            offsetSamplingStartTime = currentTime
+
+            // Clear previous samples
+            offsetSamplesAccelX.removeAll()
+            offsetSamplesAccelY.removeAll()
+            offsetSamplesAccelZ.removeAll()
+            offsetSamplesRotationX.removeAll()
+            offsetSamplesRotationY.removeAll()
+            offsetSamplesRotationZ.removeAll()
+        }
+
+        if isRecalculatingOffsets {
+            // Collect samples
             offsetSamplesAccelX.append(data.userAcceleration.x)
             offsetSamplesAccelY.append(data.userAcceleration.y)
             offsetSamplesAccelZ.append(data.userAcceleration.z)
-            
-            // Collect rotation rate samples
+
             offsetSamplesRotationX.append(data.rotationRate.x)
             offsetSamplesRotationY.append(data.rotationRate.y)
             offsetSamplesRotationZ.append(data.rotationRate.z)
-            
-            // Calculate current average accelerometer offsets
-            accelOffsetX = offsetSamplesAccelX.reduce(0, +) / Double(offsetSamplesAccelX.count)
-            accelOffsetY = offsetSamplesAccelY.reduce(0, +) / Double(offsetSamplesAccelY.count)
-            accelOffsetZ = offsetSamplesAccelZ.reduce(0, +) / Double(offsetSamplesAccelZ.count)
-            
-            // Calculate current average rotation rate offsets
-            rotationOffsetX = offsetSamplesRotationX.reduce(0, +) / Double(offsetSamplesRotationX.count)
-            rotationOffsetY = offsetSamplesRotationY.reduce(0, +) / Double(offsetSamplesRotationY.count)
-            rotationOffsetZ = offsetSamplesRotationZ.reduce(0, +) / Double(offsetSamplesRotationZ.count)
-            
-            // After 2 seconds, set offsetsCalculated to true
+
+            // Collect samples over 2 seconds
             if currentTime - offsetSamplingStartTime! >= 2.0 {
+                // Calculate average offsets
+                accelOffsetX = offsetSamplesAccelX.reduce(0, +) / Double(offsetSamplesAccelX.count)
+                accelOffsetY = offsetSamplesAccelY.reduce(0, +) / Double(offsetSamplesAccelY.count)
+                accelOffsetZ = offsetSamplesAccelZ.reduce(0, +) / Double(offsetSamplesAccelZ.count)
+
+                rotationOffsetX = offsetSamplesRotationX.reduce(0, +) / Double(offsetSamplesRotationX.count)
+                rotationOffsetY = offsetSamplesRotationY.reduce(0, +) / Double(offsetSamplesRotationY.count)
+                rotationOffsetZ = offsetSamplesRotationZ.reduce(0, +) / Double(offsetSamplesRotationZ.count)
+
                 offsetsCalculated = true
+                lastOffsetCalculationTime = currentTime
+                isRecalculatingOffsets = false
                 offsetSamplingStartTime = nil
-                
-                print("Calculated accelerometer offsets:")
+
+                print("Recalculated offsets at \(currentTime):")
                 print("Accel X: \(accelOffsetX), Y: \(accelOffsetY), Z: \(accelOffsetZ)")
-                
-                print("Calculated rotation rate offsets:")
                 print("Rotation X: \(rotationOffsetX), Y: \(rotationOffsetY), Z: \(rotationOffsetZ)")
+            } else {
+                // Not enough samples yet, return
+                return
             }
         }
-        
+
         // Proceed with speed calculation using adjusted values
-        let adjustedAccelX = data.userAcceleration.x - accelOffsetX
-        let adjustedAccelY = data.userAcceleration.y - accelOffsetY
-        let adjustedAccelZ = data.userAcceleration.z - accelOffsetZ
-        
-        // Adjusted rotation rates (accessible for other scripts)
-        let adjustedRotationRateX = data.rotationRate.x - rotationOffsetX
-        let adjustedRotationRateY = data.rotationRate.y - rotationOffsetY
-        let adjustedRotationRateZ = data.rotationRate.z - rotationOffsetZ
-        
-        // Apply low-pass filter if enabled
-        var accelX = adjustedAccelX
-        var accelY = adjustedAccelY
-        var accelZ = adjustedAccelZ
-        
-        if useLowPassFilter {
-            filteredAccelX = lowPassFilterAlpha * adjustedAccelX + (1 - lowPassFilterAlpha) * filteredAccelX
-            filteredAccelY = lowPassFilterAlpha * adjustedAccelY + (1 - lowPassFilterAlpha) * filteredAccelY
-            filteredAccelZ = lowPassFilterAlpha * adjustedAccelZ + (1 - lowPassFilterAlpha) * filteredAccelZ
-            
-            accelX = filteredAccelX
-            accelY = filteredAccelY
-            accelZ = filteredAccelZ
-        }
-        
-        // Apply direction weightings
-        accelX *= accelerometerWeightingX
-        accelY *= accelerometerWeightingY
-        accelZ *= accelerometerWeightingZ
-        
-        
-        // Update acceleration history (magnitude not used here)
-        accelerationHistory.append(accelX)
-        if accelerationHistory.count > accelerationHistorySize {
-            accelerationHistory.removeFirst()
-        }
-        
-        // Calculate variance over the time window (optional)
-        let accelerationVariance = variance(of: accelerationHistory)
-        
-        // Compute signed acceleration (along Y-axis)
-        let signedAcceleration = accelX
-        
-        // Adaptive friction (adjusted to ensure speed decreases when stopping)
-        let frictionCoefficient = 0.2 // Adjust as needed
-        let friction = -frictionCoefficient * currentSpeed
-        
-        // Update speed with signed acceleration and friction
-        currentSpeed += (signedAcceleration + friction) * deltaTime
-        currentSpeed = max(0.0, currentSpeed) // Ensure speed doesn't go below zero
-        
-        // Initialize Kalman Filter if necessary
-        if kalmanFilter == nil {
-            kalmanFilter = AdvancedKalmanFilter()
-        }
-        
-        // Predict step without friction (since friction is already applied)
-        kalmanFilter?.processNoise = kalmanProcessNoise
-        kalmanFilter?.predict(acceleration: signedAcceleration, deltaTime: deltaTime)
-        
-        // Update current speed estimate
-        if let estimatedSpeed = kalmanFilter?.estimatedSpeed {
-            currentSpeed = max(0.0, estimatedSpeed)
-        }
+        let adjustedAccelX = (data.userAcceleration.x - accelOffsetX) * accelerometerWeightingX
+        let adjustedAccelY = (data.userAcceleration.y - accelOffsetY) * accelerometerWeightingY
+        let adjustedAccelZ = (data.userAcceleration.z - accelOffsetZ) * accelerometerWeightingZ
+
+//        // Calculate the magnitude of the adjusted acceleration vector
+//        var accelerationMagnitude = sqrt(pow(adjustedAccelX, 2) + pow(adjustedAccelY, 2) + pow(adjustedAccelZ, 2))
+//
+//        // Apply tuning value
+//        accelerationMagnitude *= accelerometerTuningValue
+//
+//        // Apply low-pass filter if enabled
+//        if useLowPassFilter {
+//            filteredAcceleration = (lowPassFilterAlpha * accelerationMagnitude) + ((1 - lowPassFilterAlpha) * filteredAcceleration)
+//        } else {
+//            filteredAcceleration = accelerationMagnitude
+//        }
+//
+//        // Determine the direction of acceleration (positive or negative)
+//        let signAcceleration = (adjustedAccelX + adjustedAccelY + adjustedAccelZ) >= 0 ? 1.0 : -1.0
+//
+//        // Estimate speed changes based on filtered acceleration
+//        if useAccelerometer {
+//            sensorSpeed += signAcceleration * filteredAcceleration * deltaTime * 9.81 // Convert to m/s^2 and integrate to get speed
+//
+//            // Apply damping to prevent drift
+//            sensorSpeed *= 0.99
+//
+//            // Limit sensor speed to non-negative values
+//            if sensorSpeed < 0 {
+//                sensorSpeed = 0.0
+//            }
+//        }
+//
+//        // Update current speed estimate using Kalman filter
+//        currentSpeed = kalmanFilterUpdate(sensorSpeedMeasurement: sensorSpeed)
     }
-    
-    
+
+    // MARK: - Process Location Data
     func processLocationData(_ location: CLLocation) {
-        guard useGPS else { return }
-
-        GPSSpeedEstimate = location.speed
-        GPSSpeedEstimateAccuracy = location.horizontalAccuracy
-
-        let gpsSpeed = max(location.speed, 0)
-
-        // Compute dynamic measurement noise based on GPS accuracy and speed
-        let gpsAccuracy = location.horizontalAccuracy
-        let speedFactor = gpsSpeed / 10.0 // Adjust denominator based on typical speeds
-
-        // Weighting factors (higher weighting means more trust)
-        let accuracyWeighting = min(1.0, 5.0 / gpsAccuracy) // Trust GPS more when accuracy is less than 5 meters
-        let speedWeighting = min(1.0, speedFactor) // Trust GPS more at higher speeds
-
-        let dynamicMeasurementNoise = kalmanMeasurementNoise / (accuracyWeighting * speedWeighting + 0.01) // Avoid division by zero
-
-        // Update Kalman Filter
-        if kalmanFilter == nil {
-            kalmanFilter = AdvancedKalmanFilter()
-        }
-
-        kalmanFilter?.measurementNoise = dynamicMeasurementNoise
-        kalmanFilter?.updateWithGPS(speedMeasurement: gpsSpeed)
-
-        // Update current speed estimate
-        if let estimatedSpeed = kalmanFilter?.estimatedSpeed {
-            currentSpeed = max(0, estimatedSpeed)
+        if useGPS, let horizontalAccuracy = location.horizontalAccuracy as CLLocationAccuracy?, horizontalAccuracy >= gpsAccuracyLowerBound, horizontalAccuracy <= gpsAccuracyUpperBound {
+            //            gpsSpeed = max(location.speed, 0)
+            //            // Update current speed estimate using Kalman filter
+            ////            currentSpeed = kalmanFilterUpdate(gpsSpeedMeasurement: gpsSpeed)
+            //            GPSSpeedEstimateAccuracy = horizontalAccuracy
+            gpsSpeed = max (0, location.speed)
+            // Speed in m/s from GPS
+            DispatchQueue.main.async {
+                self.currentSpeed = self.hybridSpeed
+            }
+            GPSSpeedEstimateAccuracy = location.horizontalAccuracy
+            
+            
         }
     }
 
-    // Helper function to calculate variance
-    private func variance(of data: [Double]) -> Double {
-        let mean = data.reduce(0, +) / Double(data.count)
-        let squaredDifferences = data.map { ($0 - mean) * ($0 - mean) }
-        return squaredDifferences.reduce(0, +) / Double(data.count)
+    // Reset speed only
+    func resetSpeedOnly() {
+        sensorSpeed = 0.0
+        gpsSpeed = 0.0
+        kalmanSpeed = 0.0
+        kalmanErrorCovariance = 1.0
+        currentSpeed = 0.0
     }
-}
+    
+    
+    // MARK: - Sensor-based Speed Calculation (using accelerometer)
+    func calculateSpeed(accelData: CMAcceleration) {
+        //        Calculate the magnitude of the acceleration vector
+        if !useAccelerometer { return }
+        let accelerationMagnitude = sqrt(pow(accelData.x, 2) +
+                                         pow(accelData.y, 2) +
+                                         pow(accelData.z, 2)) - 1.0 // Subtract gravity
+        // Apply low-pass filter
+        filteredAcceleration = (filterFactor * accelerationMagnitude) + ((1 - filterFactor) * filteredAcceleration)
+        // Estimate speed changes based on filtered acceleration
+        let currentTime = Date().timeIntervalSince1970
+        let deltaTime = currentTime - lastUpdateTime1
+        lastUpdateTime1 = currentTime
+        sensorSpeed += filteredAcceleration * deltaTime * 9.81 // Convert to m/s^2 and integrate to get speed
+        // Apply damping to prevent drift
+        sensorSpeed *= 0.9
+        DispatchQueue.main.async {
+            self.currentSpeed = self.hybridSpeed
+        }
+        return
+    }
+    
 
-func normalizeVector(_ vector: [Double]) -> [Double] {
-    let magnitude = sqrt(vector.map { $0 * $0 }.reduce(0, +))
-    return magnitude > 0 ? vector.map { $0 / magnitude } : vector
-}
+    // MARK: - Kalman Filter Implementation
+    private func kalmanFilterUpdate(sensorSpeedMeasurement: Double? = nil, gpsSpeedMeasurement: Double? = nil) -> Double {
+        // Predict
+        let predictedSpeed = kalmanSpeed
+        let predictedErrorCovariance = kalmanErrorCovariance + kalmanProcessNoise
 
-func dotProduct(_ vectorA: [Double], _ vectorB: [Double]) -> Double {
-    return zip(vectorA, vectorB).map(*).reduce(0, +)
-}
-private func variance(of data: [Double]) -> Double {
-    let mean = data.reduce(0, +) / Double(data.count)
-    let squaredDifferences = data.map { ($0 - mean) * ($0 - mean) }
-    return squaredDifferences.reduce(0, +) / Double(data.count)
+        var measurement: Double = predictedSpeed
+        var measurementError: Double = predictedErrorCovariance
+
+        if let gpsSpeed = gpsSpeedMeasurement {
+            // GPS measurement update
+            measurement = gpsSpeed
+            measurementError = kalmanMeasurementNoise
+        } else if let sensorSpeed = sensorSpeedMeasurement {
+            // Sensor measurement update
+            measurement = sensorSpeed
+            measurementError = kalmanMeasurementNoise * 10 // Sensor data is less accurate
+        }
+
+        // Update
+        let kalmanGain = predictedErrorCovariance / (predictedErrorCovariance + measurementError)
+        kalmanSpeed = predictedSpeed + kalmanGain * (measurement - predictedSpeed)
+        kalmanErrorCovariance = (1 - kalmanGain) * predictedErrorCovariance
+
+        return kalmanSpeed
+    }
+
+    // MARK: - CLLocationManagerDelegate Methods
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        if let location = locations.last {
+            processLocationData(location)
+        }
+    }
 }

@@ -148,8 +148,8 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
             speedCalculator.lowPassFilterAlpha = lowPassFilterAlpha
             speedCalculator.kalmanProcessNoise = kalmanProcessNoise
             speedCalculator.kalmanMeasurementNoise = kalmanMeasurementNoise
-//            speedCalculator.gpsAccuracyLowerBound = gpsAccuracyLowerBound
-//            speedCalculator.gpsAccuracyUpperBound = gpsAccuracyUpperBound
+            speedCalculator.gpsAccuracyLowerBound = gpsAccuracyLowerBound
+            speedCalculator.gpsAccuracyUpperBound = gpsAccuracyUpperBound
         }
 
         // Observe changes to settings and update SpeedCalculator
@@ -320,14 +320,14 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
 
         func didUpdateDeviceMotionData(_ data: CMDeviceMotion) {
             DispatchQueue.main.async {
-                self.accelerometerData = data // you still use accelerometerData elsewhere
+                self.accelerometerData = data
             }
             speedCalculator.processDeviceMotionData(data)
             DispatchQueue.main.async {
                 self.currentSpeed = self.speedCalculator.currentSpeed
             }
             DispatchQueue.main.async {
-                self.GPSSpeedEstimate = String(format: "%.3f", self.speedCalculator.GPSSpeedEstimate)
+                self.GPSSpeedEstimate = String(format: "%.3f", self.speedCalculator.gpsSpeed)
                 self.GPSSpeedEstimateAccuracy = String(format: "%.3f", self.speedCalculator.GPSSpeedEstimateAccuracy)
             }
 
