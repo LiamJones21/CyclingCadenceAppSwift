@@ -85,11 +85,18 @@ class SpeedCalculator: NSObject, CLLocationManagerDelegate {
     private var filteredAcceleration1: Double = 0.0
     private let filterFactor: Double = 0.1
     private var hybridSpeed: Double {
+        if sensorOffset == 0.0 {
+            sensorOffset = sensorSpeed
+        }
         let gpsSpeedAvailable = gpsSpeed > 0.5 // Threshold for considering GPS speed reliable (0.5 m/s)
         let gpsWeight: Double = gpsSpeedAvailable ? 0.8 : 0.0
         let sensorWeight: Double = gpsSpeedAvailable ? 0.2 : 1.0
-        return (gpsSpeed * gpsWeight) + (sensorSpeed * sensorWeight) + 1.75
+        print("Sensor Speed: \(sensorSpeed), GPS Speed: \(gpsSpeed), Hybrid Speed: \(gpsSpeed * gpsWeight) + (sensorSpeed * sensorWeight)")
+        return (gpsSpeed * gpsWeight) + ((sensorSpeed - sensorOffset) * sensorWeight)
     }
+    private var isStarted = false
+    private var sensorOffset: Double = -1.76
+
 
     // MARK: - Session Control
     func reset() {
@@ -293,6 +300,9 @@ class SpeedCalculator: NSObject, CLLocationManagerDelegate {
         sensorSpeed += filteredAcceleration * deltaTime * 9.81 // Convert to m/s^2 and integrate to get speed
         // Apply damping to prevent drift
         sensorSpeed *= 0.9
+        
+        
+        
         DispatchQueue.main.async {
             self.currentSpeed = self.hybridSpeed
         }
