@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E12D44852D0391C90055F4FF /* CoreHaptics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E12D44842D0391C90055F4FF /* CoreHaptics.framework */; };
 		E14D04482CC5986A00E22AFB /* CyclingCadenceApp WatchKit App Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = E14D04252CC5986600E22AFB /* CyclingCadenceApp WatchKit App Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -77,6 +78,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E12D44842D0391C90055F4FF /* CoreHaptics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreHaptics.framework; path = System/Library/Frameworks/CoreHaptics.framework; sourceTree = SDKROOT; };
 		E14D03F42CC5980100E22AFB /* CyclingCadenceApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CyclingCadenceApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E14D04042CC5980300E22AFB /* CyclingCadenceAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CyclingCadenceAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E14D040E2CC5980300E22AFB /* CyclingCadenceAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CyclingCadenceAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -176,6 +178,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E12D44852D0391C90055F4FF /* CoreHaptics.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -238,6 +241,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		E12D44832D0391C90055F4FF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				E12D44842D0391C90055F4FF /* CoreHaptics.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		E14D03EB2CC5980100E22AFB = {
 			isa = PBXGroup;
 			children = (
@@ -250,6 +261,7 @@
 				E1D458C72CDBFBE80020FDD7 /* CyclingTrainer */,
 				E1D458DB2CDBFBEB0020FDD7 /* CyclingTrainerTests */,
 				E1D458E52CDBFBEB0020FDD7 /* CyclingTrainerUITests */,
+				E12D44832D0391C90055F4FF /* Frameworks */,
 				E14D03F52CC5980100E22AFB /* Products */,
 			);
 			sourceTree = "<group>";

@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  CyclingCadenceApp WatchKit App Watch App
-//
-//  Created by Jones, Liam on 20/10/2024.
-// ContentView.swift
-
 import SwiftUI
 
 struct ContentView: View {
@@ -18,15 +11,13 @@ struct ContentView: View {
                     Text("GPS: \(viewModel.GPSSpeedEstimate)m/s")
                         .font(.system(size: 10))
                         .foregroundColor(.gray)
-
                     Divider()
-
                     Text("Acc: \(viewModel.GPSSpeedEstimateAccuracy)m")
                         .font(.system(size: 10))
                         .foregroundColor(.gray)
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
-                // Center-aligned session duration
+
                 HStack {
                     Text(viewModel.sessionDuration)
                         .font(.system(size: 14))
@@ -34,17 +25,15 @@ struct ContentView: View {
 
                     Divider()
 
-                    Text("Data Count: \(viewModel.dataPointCount)")
+                    Text("Data: \(viewModel.dataPointCount)")
                         .font(.system(size: 14))
                         .foregroundColor(.cyan)
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
 
-                // Speed display
                 Text(String(format: "%.2f m/s", viewModel.currentSpeed))
                     .font(.system(size: 36, weight: .bold))
 
-                // Icons for position and terrain
                 HStack(spacing: 4) {
                     Image(systemName: viewModel.isStanding ? "figure.stand" : "figure.walk")
                         .font(.system(size: 20))
@@ -52,9 +41,7 @@ struct ContentView: View {
                         .font(.system(size: 20))
                 }
 
-                // Cadence, Data, and Gear displays in a single row
                 HStack(alignment: .top, spacing: 15) {
-                    // Cadence display
                     VStack {
                         Image(systemName: "arrow.clockwise.circle")
                             .font(.system(size: 20))
@@ -62,20 +49,18 @@ struct ContentView: View {
                             .font(.system(size: 16))
                     }
 
-                    // Accelerometer data display
                     VStack {
                         Text("Data")
-                            .font(.system(size: 10)) // Reduced size
-                        Text(String(format: "X: %.2f", viewModel.accelerometerDataSaved?.acceleration.x ?? 0.0))
+                            .font(.system(size: 10))
+                        Text(String(format: "X: %.2f", viewModel.accelerometerData?.userAcceleration.x ?? 0.0))
                             .font(.system(size: 9))
-                        Text(String(format: "Y: %.2f", viewModel.accelerometerDataSaved?.acceleration.y ?? 0.0))
+                        Text(String(format: "Y: %.2f", viewModel.accelerometerData?.userAcceleration.y ?? 0.0))
                             .font(.system(size: 9))
-                        Text(String(format: "Z: %.2f", viewModel.accelerometerDataSaved?.acceleration.z ?? 0.0))
+                        Text(String(format: "Z: %.2f", viewModel.accelerometerData?.userAcceleration.z ?? 0.0))
                             .font(.system(size: 9))
                     }
                     .padding(.vertical, 2)
 
-                    // Gear display
                     VStack {
                         Image(systemName: "gearshape.fill")
                             .font(.system(size: 20))
@@ -86,7 +71,6 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 0)
 
-                // Connection status
                 withAnimation(.easeInOut(duration: 0.5)) {
                     Text(viewModel.isPhoneConnected ? "Connected" : "Not Connected")
                         .font(.system(size: 14))
@@ -100,42 +84,61 @@ struct ContentView: View {
                         .animation(.easeInOut(duration: 0.5), value: viewModel.isPhoneConnected)
                 }
 
-                // Display model name during prediction
-                if viewModel.isPredicting, let modelName = viewModel.selectedModel?.name {
-                    Text("Model: \(modelName)")
-                        .font(.system(size: 14))
-                        .foregroundColor(.blue)
+                // Show predicted values if in prediction mode
+                if viewModel.isPredicting {
+                    VStack(spacing: 5) {
+                        Text("Predicted Cadence: \(Int(viewModel.predictedCadence)) RPM")
+                            .foregroundColor(.blue)
+                        Text("Predicted Terrain: \(viewModel.predictedTerrain)")
+                            .foregroundColor(.blue)
+                        Text("Predicted Stance: \(viewModel.predictedStance ? "Standing" : "Seated")")
+                            .foregroundColor(.blue)
+                        Text("Predicted Gear: \(viewModel.predictedGear)")
+                            .foregroundColor(.blue)
+                    }
                 }
 
-                // Start/Stop Button
-                Button(action: {
-                    if viewModel.isPredicting {
-//                        viewModel.stopPrediction()
-                    } else if viewModel.isRecording {
-                        viewModel.stopRecording()
-                    } else {
-                        viewModel.startRecording()
+                // Buttons for control
+                HStack {
+                    Button(action: {
+                        if viewModel.isPredicting {
+                            viewModel.stopPredictionMode()
+                        } else {
+                            viewModel.startPredictionMode()
+                        }
+                    }) {
+                        Text(viewModel.isPredicting ? "Stop Predict" : "Start Predict")
+                            .font(.system(size: 14, weight: .bold))
+                            .padding()
+                            .background(viewModel.isPredicting ? Color.red : Color.blue)
+                            .cornerRadius(10)
+                            .foregroundColor(.white)
                     }
-                }) {
-                    Text(viewModel.isPredicting ? "Stop Prediction" : (viewModel.isRecording ? "Stop Recording" : "Start Recording"))
-                        .font(.system(size: 20, weight: .bold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(viewModel.isPredicting ? Color.red : (viewModel.isRecording ? Color.orange : Color.green))
-                        .cornerRadius(50)
-                        .foregroundColor(.white)
+
+                    Button(action: {
+                        if viewModel.isRecording {
+                            viewModel.stopRecording()
+                        } else {
+                            viewModel.startRecording()
+                        }
+                    }) {
+                        Text(viewModel.isRecording ? "Stop Rec" : "Start Rec")
+                            .font(.system(size: 14, weight: .bold))
+                            .padding()
+                            .background(viewModel.isRecording ? Color.orange : Color.green)
+                            .cornerRadius(10)
+                            .foregroundColor(.white)
+                    }
                 }
-                .padding(.top, 10)
+
             }
             .padding()
             .onAppear {
                 viewModel.setup()
             }
-            // Long-press gesture to show settings
             .onLongPressGesture {
                 showSettings = true
             }
-            // Present the SettingsView when showSettings is true
             .sheet(isPresented: $showSettings) {
                 SettingsView()
                     .environmentObject(viewModel)
@@ -143,9 +146,3 @@ struct ContentView: View {
         }
     }
 }
-
-#Preview {
-    ContentView()
-}
-
-

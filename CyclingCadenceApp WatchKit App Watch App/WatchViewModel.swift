@@ -1,8 +1,4 @@
 
-//  Created by Jones, Liam on 20/10/2024.
-// WatchViewModel.swift
-// CyclingCadenceApp
-
 import Foundation
 import Combine
 import CoreMotion
@@ -10,12 +6,10 @@ import CoreLocation
 import HealthKit
 import WatchConnectivity
 import SwiftUI
-
-// Import Protocols and Models
-// Ensure you import 'Protocols.swift' and 'Models.swift'
-
+#if canImport(CoreHaptics)
+import CoreHaptics
+#endif
 class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, SensorManagerDelegate, ConnectivityManagerDelegate, PredictionManagerDelegate, LocationManagerDelegate {
-    // MARK: - Published Properties
     @Published var isRecording = false
     @Published var currentSpeed: Double = 0.0
     @Published var GPSSpeedEstimate: String = "0.000"
@@ -31,48 +25,58 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
     @Published var sessionActive: Bool = false
     @Published var accelerometerData: CMDeviceMotion?
     @Published var accelerometerDataSaved: CMAccelerometerData?
-        
 
-    
+    // NEW: Prediction mode
     @Published var isPredicting: Bool = false
+    @Published var predictedCadence: Double = 0.0
+    @Published var predictedTerrain: String = "Road"
+    @Published var predictedStance: Bool = false
+    @Published var predictedGear: Int = 0
+
     @Published var selectedModel: ModelConfig?
     @Published var sessionDuration: String = "00:00"
     @Published var gearRatios: [String] = []
-    @Published var wheelCircumference: Double = 2.1 // Default value in meters
-    
-    // MARK: - Settings Properties
+    @Published var wheelCircumference: Double = 2.1 // in meters
+
+    // Settings Properties
     @Published var useAccelerometer: Bool = false
     @Published var useGPS: Bool = true
-
-    // Accelerometer settings
     @Published var accelerometerTuningValue: Double = 1.0
     @Published var accelerometerWeightingX: Double = 1.0
     @Published var accelerometerWeightingY: Double = 1.0
     @Published var accelerometerWeightingZ: Double = 1.0
     @Published var useLowPassFilter: Bool = false
     @Published var lowPassFilterAlpha: Double = 0.1
-
-    // Kalman filter settings
     @Published var kalmanProcessNoise: Double = 0.1
     @Published var kalmanMeasurementNoise: Double = 0.1
     @Published var gpsAccuracyLowerBound: Double = 5.0
     @Published var gpsAccuracyUpperBound: Double = 20.0
 
-    // Managers
     private let healthKitManager = HealthKitManager()
     private let sensorManager = SensorManager()
     private let speedCalculator = SpeedCalculator()
     private let connectivityManager = ConnectivityManager()
     private let predictionManager = PredictionManager()
     private let dataCollector: DataCollector
+    private let locationManager = LocationManager()
 
     var sendingBatches = false
 
-        
-    private let locationManager = LocationManager()
+    // Prediction handling
+    private let predictionHandler = PredictionHandler()
+    private var predictionTimer: Timer?
+    // Haptic Engines
+    #if canImport(CoreHaptics)
+    private var hapticEngine: CHHapticEngine?
+    #endif
 
-    // Timer for updating session duration
+    // Gear vibration control
+    private var lastVibrationTime: Date = Date(timeIntervalSince1970: 0)
+    private let vibrationInterval: TimeInterval = 10.0
+    private var lastSuggestedGear: Int = 0
+
     private var durationTimer: Timer?
+    private var cancellables = Set<AnyCancellable>()
 
     override init() {
         dataCollector = DataCollector(speedCalculator: speedCalculator)
@@ -80,44 +84,44 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
         loadSettings()
         setup()
         observeSettingsChanges()
+        prepareHaptics()
     }
-    // MARK: - Settings Persistence
 
-        func loadSettings() {
-            let defaults = UserDefaults.standard
-            useAccelerometer = defaults.bool(forKey: "useAccelerometer")
-            useGPS = defaults.bool(forKey: "useGPS")
+    func loadSettings() {
+        let defaults = UserDefaults.standard
+        useAccelerometer = defaults.bool(forKey: "useAccelerometer")
+        useGPS = defaults.bool(forKey: "useGPS")
 
-            accelerometerTuningValue = defaults.double(forKey: "accelerometerTuningValue")
-            accelerometerWeightingX = defaults.double(forKey: "accelerometerWeightingX")
-            accelerometerWeightingY = defaults.double(forKey: "accelerometerWeightingY")
-            accelerometerWeightingZ = defaults.double(forKey: "accelerometerWeightingZ")
-            useLowPassFilter = defaults.bool(forKey: "useLowPassFilter")
-            lowPassFilterAlpha = defaults.double(forKey: "lowPassFilterAlpha")
+        accelerometerTuningValue = defaults.double(forKey: "accelerometerTuningValue")
+        accelerometerWeightingX = defaults.double(forKey: "accelerometerWeightingX")
+        accelerometerWeightingY = defaults.double(forKey: "accelerometerWeightingY")
+        accelerometerWeightingZ = defaults.double(forKey: "accelerometerWeightingZ")
+        useLowPassFilter = defaults.bool(forKey: "useLowPassFilter")
+        lowPassFilterAlpha = defaults.double(forKey: "lowPassFilterAlpha")
 
-            kalmanProcessNoise = defaults.double(forKey: "kalmanProcessNoise")
-            kalmanMeasurementNoise = defaults.double(forKey: "kalmanMeasurementNoise")
-            gpsAccuracyLowerBound = defaults.double(forKey: "gpsAccuracyLowerBound")
-            gpsAccuracyUpperBound = defaults.double(forKey: "gpsAccuracyUpperBound")
-        }
+        kalmanProcessNoise = defaults.double(forKey: "kalmanProcessNoise")
+        kalmanMeasurementNoise = defaults.double(forKey: "kalmanMeasurementNoise")
+        gpsAccuracyLowerBound = defaults.double(forKey: "gpsAccuracyLowerBound")
+        gpsAccuracyUpperBound = defaults.double(forKey: "gpsAccuracyUpperBound")
+    }
 
-        func saveSettings() {
-            let defaults = UserDefaults.standard
-            defaults.set(useAccelerometer, forKey: "useAccelerometer")
-            defaults.set(useGPS, forKey: "useGPS")
+    func saveSettings() {
+        let defaults = UserDefaults.standard
+        defaults.set(useAccelerometer, forKey: "useAccelerometer")
+        defaults.set(useGPS, forKey: "useGPS")
 
-            defaults.set(accelerometerTuningValue, forKey: "accelerometerTuningValue")
-            defaults.set(accelerometerWeightingX, forKey: "accelerometerWeightingX")
-            defaults.set(accelerometerWeightingY, forKey: "accelerometerWeightingY")
-            defaults.set(accelerometerWeightingZ, forKey: "accelerometerWeightingZ")
-            defaults.set(useLowPassFilter, forKey: "useLowPassFilter")
-            defaults.set(lowPassFilterAlpha, forKey: "lowPassFilterAlpha")
+        defaults.set(accelerometerTuningValue, forKey: "accelerometerTuningValue")
+        defaults.set(accelerometerWeightingX, forKey: "accelerometerWeightingX")
+        defaults.set(accelerometerWeightingY, forKey: "accelerometerWeightingY")
+        defaults.set(accelerometerWeightingZ, forKey: "accelerometerWeightingZ")
+        defaults.set(useLowPassFilter, forKey: "useLowPassFilter")
+        defaults.set(lowPassFilterAlpha, forKey: "lowPassFilterAlpha")
 
-            defaults.set(kalmanProcessNoise, forKey: "kalmanProcessNoise")
-            defaults.set(kalmanMeasurementNoise, forKey: "kalmanMeasurementNoise")
-            defaults.set(gpsAccuracyLowerBound, forKey: "gpsAccuracyLowerBound")
-            defaults.set(gpsAccuracyUpperBound, forKey: "gpsAccuracyUpperBound")
-        }
+        defaults.set(kalmanProcessNoise, forKey: "kalmanProcessNoise")
+        defaults.set(kalmanMeasurementNoise, forKey: "kalmanMeasurementNoise")
+        defaults.set(gpsAccuracyLowerBound, forKey: "gpsAccuracyLowerBound")
+        defaults.set(gpsAccuracyUpperBound, forKey: "gpsAccuracyUpperBound")
+    }
 
     func setup() {
         healthKitManager.delegate = self
@@ -134,159 +138,74 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
 
         // Start sensors immediately to calculate speed all the time
         sensorManager.startSensors()
-        
     }
 
     func applySettingsToSpeedCalculator() {
-            speedCalculator.useAccelerometer = useAccelerometer
-            speedCalculator.useGPS = useGPS
-            speedCalculator.accelerometerTuningValue = accelerometerTuningValue
-            speedCalculator.accelerometerWeightingX = accelerometerWeightingX
-            speedCalculator.accelerometerWeightingY = accelerometerWeightingY
-            speedCalculator.accelerometerWeightingZ = accelerometerWeightingZ
-            speedCalculator.useLowPassFilter = useLowPassFilter
-            speedCalculator.lowPassFilterAlpha = lowPassFilterAlpha
-            speedCalculator.kalmanProcessNoise = kalmanProcessNoise
-            speedCalculator.kalmanMeasurementNoise = kalmanMeasurementNoise
-            speedCalculator.gpsAccuracyLowerBound = gpsAccuracyLowerBound
-            speedCalculator.gpsAccuracyUpperBound = gpsAccuracyUpperBound
-        }
+        speedCalculator.useAccelerometer = useAccelerometer
+        speedCalculator.useGPS = useGPS
+        speedCalculator.accelerometerTuningValue = accelerometerTuningValue
+        speedCalculator.accelerometerWeightingX = accelerometerWeightingX
+        speedCalculator.accelerometerWeightingY = accelerometerWeightingY
+        speedCalculator.accelerometerWeightingZ = accelerometerWeightingZ
+        speedCalculator.useLowPassFilter = useLowPassFilter
+        speedCalculator.lowPassFilterAlpha = lowPassFilterAlpha
+        speedCalculator.kalmanProcessNoise = kalmanProcessNoise
+        speedCalculator.kalmanMeasurementNoise = kalmanMeasurementNoise
+        speedCalculator.gpsAccuracyLowerBound = gpsAccuracyLowerBound
+        speedCalculator.gpsAccuracyUpperBound = gpsAccuracyUpperBound
+    }
 
-        // Observe changes to settings and update SpeedCalculator
-        private var cancellables = Set<AnyCancellable>()
-    // MARK: - Observe Settings Changes
+    func observeSettingsChanges() {
+        $useAccelerometer.sink { [weak self] _ in self?.applySettingsAndSave() }.store(in: &cancellables)
+        $useGPS.sink { [weak self] _ in self?.applySettingsAndSave() }.store(in: &cancellables)
+        $accelerometerTuningValue.sink { [weak self] _ in self?.applySettingsAndSave() }.store(in: &cancellables)
+        $accelerometerWeightingX.sink { [weak self] _ in self?.applySettingsAndSave() }.store(in: &cancellables)
+        $accelerometerWeightingY.sink { [weak self] _ in self?.applySettingsAndSave() }.store(in: &cancellables)
+        $accelerometerWeightingZ.sink { [weak self] _ in self?.applySettingsAndSave() }.store(in: &cancellables)
+        $useLowPassFilter.sink { [weak self] _ in self?.applySettingsAndSave() }.store(in: &cancellables)
+        $lowPassFilterAlpha.sink { [weak self] _ in self?.applySettingsAndSave() }.store(in: &cancellables)
+        $kalmanProcessNoise.sink { [weak self] _ in self?.applySettingsAndSave() }.store(in: &cancellables)
+        $kalmanMeasurementNoise.sink { [weak self] _ in self?.applySettingsAndSave() }.store(in: &cancellables)
+        $gpsAccuracyLowerBound.sink { [weak self] _ in self?.applySettingsAndSave() }.store(in: &cancellables)
+        $gpsAccuracyUpperBound.sink { [weak self] _ in self?.applySettingsAndSave() }.store(in: &cancellables)
+    }
 
-        func observeSettingsChanges() {
-            $useAccelerometer
-                .sink { [weak self] _ in
-                    self?.applySettingsToSpeedCalculator()
-                    self?.saveSettings()
-                }
-                .store(in: &cancellables)
-
-            $useGPS
-                .sink { [weak self] _ in
-                    self?.applySettingsToSpeedCalculator()
-                    self?.saveSettings()
-                }
-                .store(in: &cancellables)
-
-            $accelerometerTuningValue
-                .sink { [weak self] _ in
-                    self?.applySettingsToSpeedCalculator()
-                    self?.saveSettings()
-                }
-                .store(in: &cancellables)
-
-            $accelerometerWeightingX
-                .sink { [weak self] _ in
-                    self?.applySettingsToSpeedCalculator()
-                    self?.saveSettings()
-                }
-                .store(in: &cancellables)
-
-            $accelerometerWeightingY
-                .sink { [weak self] _ in
-                    self?.applySettingsToSpeedCalculator()
-                    self?.saveSettings()
-                }
-                .store(in: &cancellables)
-
-            $accelerometerWeightingZ
-                .sink { [weak self] _ in
-                    self?.applySettingsToSpeedCalculator()
-                    self?.saveSettings()
-                }
-                .store(in: &cancellables)
-
-            $useLowPassFilter
-                .sink { [weak self] _ in
-                    self?.applySettingsToSpeedCalculator()
-                    self?.saveSettings()
-                }
-                .store(in: &cancellables)
-
-            $lowPassFilterAlpha
-                .sink { [weak self] _ in
-                    self?.applySettingsToSpeedCalculator()
-                    self?.saveSettings()
-                }
-                .store(in: &cancellables)
-
-            $kalmanProcessNoise
-                .sink { [weak self] _ in
-                    self?.applySettingsToSpeedCalculator()
-                    self?.saveSettings()
-                }
-                .store(in: &cancellables)
-
-            $kalmanMeasurementNoise
-                .sink { [weak self] _ in
-                    self?.applySettingsToSpeedCalculator()
-                    self?.saveSettings()
-                }
-                .store(in: &cancellables)
-
-            $gpsAccuracyLowerBound
-                .sink { [weak self] _ in
-                    self?.applySettingsToSpeedCalculator()
-                    self?.saveSettings()
-                }
-                .store(in: &cancellables)
-
-            $gpsAccuracyUpperBound
-                .sink { [weak self] _ in
-                    self?.applySettingsToSpeedCalculator()
-                    self?.saveSettings()
-                }
-                .store(in: &cancellables)
-        }
-    
-    
-    // MARK: - Recording Control Methods
+    private func applySettingsAndSave() {
+        applySettingsToSpeedCalculator()
+        saveSettings()
+    }
 
     func startRecording(synchronized: Bool = true) {
         healthKitManager.startWorkout()
-        // sensorManager.startSensors() // Already started
         locationManager.startUpdatingLocation()
         dataCollector.resetData()
         startDurationTimer()
-//        speedCalculator.reset() // Reset accelerometer data average
 
-        // Update published properties
         DispatchQueue.main.async {
             self.isRecording = true
             self.recordingStateLastChanged = Date()
             self.sessionActive = true
         }
-        // Synchronize state with phone if needed
-        if synchronized && isPhoneConnected {
+        if synchronized && self.isPhoneConnected {
             connectivityManager.sendRecordingState(isRecording: isRecording, timestamp: recordingStateLastChanged)
         }
     }
 
     func stopRecording(synchronized: Bool = true) {
         healthKitManager.stopWorkout()
-        // sensorManager.stopSensors() // Keep sensors running
-//        locationManager.stopUpdatingLocation()
         stopDurationTimer()
-        speedCalculator.stopSession() // Stop session in speed calculator
+        speedCalculator.stopSession()
 
-        // Update published properties
         DispatchQueue.main.async {
             self.isRecording = false
             self.recordingStateLastChanged = Date()
             self.sessionActive = false
         }
-        // Send collected data to phone
         sendDataToPhone()
-        // Synchronize state with phone if needed
         if synchronized && isPhoneConnected {
             connectivityManager.sendRecordingState(isRecording: isRecording, timestamp: recordingStateLastChanged)
         }
     }
-
-    // MARK: - Duration Timer Methods
 
     private func startDurationTimer() {
         durationTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
@@ -300,10 +219,9 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
     }
 
     private func updateSessionDuration() {
-        // Calculate and update session duration
         let elapsed: TimeInterval
-        if isPredicting, let startTime = predictionManager.predictionStartTime {
-            elapsed = Date().timeIntervalSince(startTime)
+        if isPredicting {
+            elapsed = predictionManager.predictionStartTime.map { Date().timeIntervalSince($0) } ?? 0
         } else if isRecording, let startTime = healthKitManager.workoutStartTime {
             elapsed = Date().timeIntervalSince(startTime)
         } else {
@@ -316,77 +234,64 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
         }
     }
 
-    // MARK: - SensorManagerDelegate
+    func didUpdateDeviceMotionData(_ data: CMDeviceMotion) {
+        DispatchQueue.main.async {
+            self.accelerometerData = data
+        }
+        speedCalculator.processDeviceMotionData(data)
+        DispatchQueue.main.async {
+            self.currentSpeed = self.speedCalculator.currentSpeed
+            self.GPSSpeedEstimate = String(format: "%.3f", self.speedCalculator.gpsSpeed)
+            self.GPSSpeedEstimateAccuracy = String(format: "%.3f", self.speedCalculator.GPSSpeedEstimateAccuracy)
+            self.currentCadence = self.estimateCadence() ?? 0.0
+        }
 
-        func didUpdateDeviceMotionData(_ data: CMDeviceMotion) {
+        if isRecording {
+            dataCollector.collectData(
+                deviceMotionData: data,
+                speed: speedCalculator.currentSpeed,
+                gear: currentGear,
+                terrain: currentTerrain,
+                isStanding: isStanding,
+                location: locationManager.currentLocation
+            )
             DispatchQueue.main.async {
-                self.accelerometerData = data
-            }
-            speedCalculator.processDeviceMotionData(data)
-            DispatchQueue.main.async {
-                self.currentSpeed = self.speedCalculator.currentSpeed
-            }
-            DispatchQueue.main.async {
-                self.GPSSpeedEstimate = String(format: "%.3f", self.speedCalculator.gpsSpeed)
-                self.GPSSpeedEstimateAccuracy = String(format: "%.3f", self.speedCalculator.GPSSpeedEstimateAccuracy)
-            }
-
-            // Continue to estimate cadence
-            DispatchQueue.main.async {
-                self.currentCadence = self.estimateCadence() ?? 0.0
+                self.dataPointCount = self.dataCollector.dataCount
             }
 
-            // Collect data only if recording
-            if isRecording {
-                dataCollector.collectData(
-                    deviceMotionData: data,
-                    speed: speedCalculator.currentSpeed,
-                    gear: currentGear,
-                    terrain: currentTerrain,
-                    isStanding: isStanding,
-                    location: locationManager.currentLocation
-                )
-                DispatchQueue.main.async {
-                    self.dataPointCount = self.dataCollector.dataCount
-                }
-
-                // Batch sending logic
-                if dataCollector.getUnsentData().count >= 2000 {
-                    sendDataToPhone()
-                }
+            if dataCollector.getUnsentData().count >= 2000 {
+                sendDataToPhone()
             }
         }
-//    func estimateCadence() -> Double? {
-//        if currentGear == 0 {
-//            return 0.0 // Cadence is 0 when freewheeling
-//        }
-//
-//        guard !gearRatios.isEmpty else { return 0.0 }
-//        let currentGearIndex = currentGear - 1
-//        guard currentGearIndex >= 0 && currentGearIndex < gearRatios.count,
-//              let gearRatio = Double(gearRatios[currentGearIndex]),
-//              wheelCircumference > 0 else { return 0.0 }
-//
-//        // Calculate cadence (RPM)
-//        let cadence = (currentSpeed / wheelCircumference) * gearRatio * 60
-//        return cadence
-//    }
-    // MARK: - Cadence Estimation
-    
+
+        // If predicting, accumulate data and run model when we have a full window
+        if isPredicting {
+            predictionHandler.addDataPoint(
+                accel_x: data.userAcceleration.x,
+                accel_y: data.userAcceleration.y,
+                accel_z: data.userAcceleration.z,
+                rotacc_x: data.rotationRate.x,
+                rotacc_y: data.rotationRate.y,
+                rotacc_z: data.rotationRate.z,
+                speed: currentSpeed
+            )
+
+            if predictionHandler.isReadyForPrediction() {
+                runPrediction()
+            }
+        }
+    }
+
     func estimateCadence() -> Double? {
         return dataCollector.estimateCadence()
     }
 
-    // MARK: - Data Sending
-
     func sendDataToPhone() {
-        if sendingBatches || !isPhoneConnected {return}
-        
+        if sendingBatches || !isPhoneConnected { return }
         self.sendingBatches = true
         let unsentData = dataCollector.getUnsentData()
         dataCollector.clearUnsentData()
         let batchSize = 300
-
 
         guard !unsentData.isEmpty else { return }
 
@@ -407,12 +312,9 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
 
         for batch in batches {
             connectivityManager.sendCollectedData(batch)
-            print("Sending batch of data to phone... Batch size: \(batch.count)")
         }
         self.sendingBatches = false
     }
-
-    // MARK: - ConnectivityManagerDelegate
 
     func didUpdateConnectionStatus(isConnected: Bool) {
         DispatchQueue.main.async {
@@ -421,7 +323,6 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
     }
 
     func didReceiveRecordingState(isRecording: Bool, timestamp: Date) {
-        // Handle synchronization of recording state
         if timestamp > recordingStateLastChanged {
             if isRecording != self.isRecording {
                 recordingStateLastChanged = timestamp
@@ -432,22 +333,19 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
                 }
             }
         } else if timestamp < recordingStateLastChanged {
-            // Our state is newer, send it to the phone
             connectivityManager.sendRecordingState(isRecording: self.isRecording, timestamp: self.recordingStateLastChanged)
         }
     }
 
     func didReceiveMessage(_ message: [String: Any]) {
         DispatchQueue.main.async {
-            // Handle recording state if present
             if let isRecording = message["isRecording"] as? Bool,
-               let timestamp = message["recordingStateLastChanged"] as? TimeInterval {
-                let date = Date(timeIntervalSince1970: timestamp)
+               let ts = message["recordingStateLastChanged"] as? TimeInterval {
+                let date = Date(timeIntervalSince1970: ts)
                 self.didReceiveRecordingState(isRecording: isRecording, timestamp: date)
                 return
             }
 
-            // Handle settings updates
             var settingsUpdated = false
 
             if let currentGear = message["currentGear"] as? Int {
@@ -467,50 +365,148 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
 
             if let gearRatios = message["gearRatios"] as? [String] {
                 self.gearRatios = gearRatios
-                self.dataCollector.gearRatios = gearRatios // Update DataCollector
+                self.dataCollector.gearRatios = gearRatios
                 settingsUpdated = true
             }
 
             if let wheelCircumference = message["wheelCircumference"] as? Double {
                 self.wheelCircumference = wheelCircumference
-                self.dataCollector.wheelCircumference = wheelCircumference // Update DataCollector
+                self.dataCollector.wheelCircumference = wheelCircumference
                 settingsUpdated = true
             }
 
             if settingsUpdated {
                 self.settingsReceived = true
-                print("Settings updated from phone")
             }
         }
     }
 
-    // MARK: - PredictionManagerDelegate
-
     func didReceivePredictionResult(_ result: PredictionResult) {
-        // Handle prediction result
-        // For example, send the result to the phone
-        connectivityManager.sendPredictionResult(result)
+        // Not used here since we handle predictions directly
     }
-
-    // MARK: - LocationManagerDelegate
 
     func didUpdateLocation(_ location: CLLocation) {
         speedCalculator.processLocationData(location)
     }
 
-    // MARK: - HealthKitManagerDelegate
+    func didStartWorkout() {}
+    func didEndWorkout() {}
 
-    func didStartWorkout() {
-        // Handle workout start if needed
-        print("Workout started")
+    // MARK: Prediction Mode Control
+    func startPredictionMode() {
+        isPredicting = true
+        predictionHandler.reset()
+        predictionManager.predictionStartTime = Date()
+        // Maybe select a model config if needed
+        // selectedModel = ...
     }
 
-    func didEndWorkout() {
-        // Handle workout end if needed
-        print("Workout ended")
+    func stopPredictionMode() {
+        isPredicting = false
+        predictionManager.predictionStartTime = nil
     }
-    
-    
+
+    func runPrediction() {
+        guard let result = predictionHandler.runPrediction() else { return }
+        DispatchQueue.main.async {
+            self.predictedCadence = result.cadence
+            self.predictedTerrain = result.terrain
+            self.predictedStance = result.isStanding
+            // From speed and predicted cadence, work out gear:
+            self.predictedGear = self.estimateGear(cadence: self.predictedCadence, speed: self.currentSpeed)
+            self.handleGearVibrationIfNeeded()
+        }
+    }
+
+    func estimateGear(cadence: Double, speed: Double) -> Int {
+        // If gear ratios known, invert the formula:
+        // cadence (RPM) = (speed(m/s)/wheelCircumference)*gearRatio*60
+        // gearRatio = (cadence/60 * wheelCircumference)/speed
+        // Find closest gear ratio:
+        guard !gearRatios.isEmpty, speed > 0.1 else { return 0 }
+        let targetRatio = (cadence/60) * wheelCircumference / speed
+        var bestGear = 1
+        var bestDiff = Double.greatestFiniteMagnitude
+
+        for (i, ratioStr) in gearRatios.enumerated() {
+            if let ratio = Double(ratioStr) {
+                let diff = abs(ratio - targetRatio)
+                if diff < bestDiff {
+                    bestDiff = diff
+                    bestGear = i+1
+                }
+            }
+        }
+        return bestGear
+    }
+
+    // Haptics
+    func prepareHaptics() {
+            #if canImport(CoreHaptics)
+            guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+            do {
+                hapticEngine = try CHHapticEngine()
+                try hapticEngine?.start()
+            } catch {
+                print("Failed to start Core Haptics engine: \(error.localizedDescription)")
+            }
+            #endif
+        }
+
+    func vibrate(style: HapticStyle) {
+            #if canImport(CoreHaptics)
+            if let hapticEngine = hapticEngine {
+                let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 1.0)
+                let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 1.0)
+                let duration: Double = (style == .long) ? 0.5 : 0.1
+                let event = CHHapticEvent(eventType: .hapticContinuous,
+                                          parameters: [intensity, sharpness],
+                                          relativeTime: 0,
+                                          duration: duration)
+                do {
+                    let pattern = try CHHapticPattern(events: [event], parameters: [])
+                    let player = try hapticEngine.makePlayer(with: pattern)
+                    try player.start(atTime: 0)
+                    return
+                } catch {
+                    print("Failed to play haptic: \(error.localizedDescription)")
+                }
+            }
+            #endif
+            // Fallback for older devices
+            vibrateFallback(style: style)
+        }
+    func vibrateFallback(style: HapticStyle) {
+            let hapticType: WKHapticType = (style == .long) ? .failure : .success
+            WKInterfaceDevice.current().play(hapticType)
+        }
+
+        enum HapticStyle {
+            case short
+            case long
+        }
+
+    // MARK: - Gear Vibration Control
+        func handleGearVibrationIfNeeded() {
+            let targetCadence = 70.0
+            let currentTime = Date()
+            let enoughTimePassed = currentTime.timeIntervalSince(lastVibrationTime) >= vibrationInterval
+
+            let cadenceDiff = predictedCadence - targetCadence
+            let suggestedGear = predictedGear
+
+            if abs(cadenceDiff) > 5 { // threshold
+                if enoughTimePassed || (suggestedGear != lastSuggestedGear) {
+                    if cadenceDiff < 0 {
+                        // Go up a gear: short vibration
+                        vibrate(style: .short)
+                    } else {
+                        // Go down a gear: long vibration
+                        vibrate(style: .long)
+                    }
+                    lastVibrationTime = currentTime
+                    lastSuggestedGear = suggestedGear
+                }
+            }
+        }
 }
-
-

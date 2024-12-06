@@ -7,21 +7,19 @@
 // CyclingCadenceApp
 
 import Foundation
-import CoreMotion
 import CoreLocation
+import CoreMotion
 
 class DataCollector {
     private var collectedData: [CyclingData] = []
     public var unsentData: [CyclingData] = []
-
     var gearRatios: [String] = []
-    var wheelCircumference: Double = 2.1 // Default value in meters
+    var wheelCircumference: Double = 2.1
 
     var dataCount: Int {
         return collectedData.count
     }
 
-    // Reference to SpeedCalculator to access offsets
     private let speedCalculator: SpeedCalculator
 
     init(speedCalculator: SpeedCalculator) {
@@ -33,8 +31,6 @@ class DataCollector {
         unsentData.removeAll()
     }
 
-    // DataCollector.swift
-
     func collectData(
         deviceMotionData: CMDeviceMotion,
         speed: Double,
@@ -43,7 +39,6 @@ class DataCollector {
         isStanding: Bool,
         location: CLLocation?
     ) {
-        // Adjust for offsets
         let accelerationX = deviceMotionData.userAcceleration.x - speedCalculator.accelOffsetX
         let accelerationY = deviceMotionData.userAcceleration.y - speedCalculator.accelOffsetY
         let accelerationZ = deviceMotionData.userAcceleration.z - speedCalculator.accelOffsetZ
@@ -52,7 +47,6 @@ class DataCollector {
         let rotationRateY = deviceMotionData.rotationRate.y - speedCalculator.rotationOffsetY
         let rotationRateZ = deviceMotionData.rotationRate.z - speedCalculator.rotationOffsetZ
 
-        // Collect data
         let sensorData = SensorData(
             accelerationX: accelerationX,
             accelerationY: accelerationY,
@@ -84,7 +78,6 @@ class DataCollector {
         unsentData.append(cyclingData)
     }
 
-
     func getUnsentData() -> [CyclingData] {
         return unsentData
     }
@@ -92,7 +85,7 @@ class DataCollector {
     func clearUnsentData() {
         unsentData.removeAll()
     }
-    // Cadence estimation function
+
     func estimateCadence(speed: Double, gear: Int) -> Double {
         guard gear > 0,
               gear <= gearRatios.count,
@@ -101,12 +94,10 @@ class DataCollector {
             return 0.0
         }
 
-        // Calculate cadence (RPM)
         let cadence = (speed / wheelCircumference) * gearRatio * 60
         return cadence
     }
 
-    // Parameter-less cadence estimation for ContentView
     func estimateCadence() -> Double? {
         guard let latestData = collectedData.last else { return nil }
         let speed = latestData.speed
