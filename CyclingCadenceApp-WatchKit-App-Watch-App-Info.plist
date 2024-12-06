@@ -4,15 +4,14 @@
 <dict>
 	<key>UIBackgroundModes</key>
 	<array>
-		<string>external-accessory</string>
-		<string>bluetooth-peripheral</string>
 		<string>bluetooth-central</string>
+		<string>bluetooth-peripheral</string>
+		<string>external-accessory</string>
 		<string>processing</string>
 	</array>
 	<key>WKBackgroundModes</key>
 	<array>
 		<string>workout-processing</string>
-		<string>alarm</string>
 	</array>
 	<key>WKSupportsAlwaysOnDisplay</key>
 	<true/>

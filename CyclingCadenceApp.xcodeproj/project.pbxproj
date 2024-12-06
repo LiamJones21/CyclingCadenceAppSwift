@@ -855,7 +855,7 @@
 				INFOPLIST_FILE = CyclingCadenceApp/Info.plist;
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Your app requires access to the local network for peer-to-peer connectivity";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app requires location access to track your cycling activity and provide speed information.";
-				INFOPLIST_KEY_NSNetworkVolumesUsageDescription = "$(MARKETING_VERSION)";
+				INFOPLIST_KEY_NSNetworkVolumesUsageDescription = 1.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -866,7 +866,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoT.CyclingCadenceApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoTBuild.CyclingCadenceApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -888,7 +888,7 @@
 				INFOPLIST_FILE = CyclingCadenceApp/Info.plist;
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Your app requires access to the local network for peer-to-peer connectivity";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app requires location access to track your cycling activity and provide speed information.";
-				INFOPLIST_KEY_NSNetworkVolumesUsageDescription = "$(MARKETING_VERSION)";
+				INFOPLIST_KEY_NSNetworkVolumesUsageDescription = 1.0;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -899,7 +899,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoT.CyclingCadenceApp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoTBuild.CyclingCadenceApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -997,13 +997,13 @@
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "\"This app requires access to your workout data to track and display your cycling sessions.\"";
 				INFOPLIST_KEY_NSMotionUsageDescription = "\"This app requires access to the gyroscope and accelerometer to track cycling activity.\"";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.LiamIoT.CyclingCadenceApp;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.LiamIoTBuild.CyclingCadenceApp;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoT.CyclingCadenceApp.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoTBuild.CyclingCadenceApp.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -1032,13 +1032,13 @@
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "\"This app requires access to your workout data to track and display your cycling sessions.\"";
 				INFOPLIST_KEY_NSMotionUsageDescription = "\"This app requires access to the gyroscope and accelerometer to track cycling activity.\"";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.LiamIoT.CyclingCadenceApp;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.LiamIoTBuild.CyclingCadenceApp;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoT.CyclingCadenceApp.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoTBuild.CyclingCadenceApp.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -1149,7 +1149,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoT.CyclingTrainer;
+				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoTBuild.LiamIoT.CyclingTrainer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1179,7 +1179,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.1;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoT.CyclingTrainer;
+				PRODUCT_BUNDLE_IDENTIFIER = com.LiamIoTBuild.LiamIoT.CyclingTrainer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;

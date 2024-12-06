@@ -351,7 +351,7 @@ class WatchViewModel: NSObject, ObservableObject, HealthKitManagerDelegate, Sens
                 }
 
                 // Batch sending logic
-                if dataCollector.getUnsentData().count >= 600 {
+                if dataCollector.getUnsentData().count >= 2000 {
                     sendDataToPhone()
                 }
             }
